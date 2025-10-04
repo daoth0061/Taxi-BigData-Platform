@@ -1,0 +1,250 @@
+```
+# == General Ignored Files ==
+# ===========================
+# Compiled source (e.g. .class, .o, .pyc)
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Packages
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Tt]humbs.db
+
+# Misc files
+.node_repl_history
+.npmignore
+.env # Environment variables
+.vscode/ # VS Code specific files (settings, launch configs)
+*.sublime-project
+*.sublime-workspace
+*.idea/ # IntelliJ/WebStorm/etc. IDE files
+*.swp # Vim swap files
+*~ # Backup files
+.project
+.classpath
+.settings/ # Eclipse specific files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.nyc_output/
+.npm/
+.bower-components/
+
+# == Node.js / JavaScript ==
+# =========================
+node_modules/
+dist/
+build/
+coverage/
+npm-debug.log
+yarn-error.log
+.webpack/
+.next/ # Next.js build output
+.nuxt/ # Nuxt.js build output
+out/ # SvelteKit build output
+.parcel-cache/ # Parcel cache
+
+# == Python ==
+# ============
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+venv/ # Python virtual environment directory
+.Python/
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+pip-log.txt
+pip-delete-this-arg.txt
+.tox/
+.coverage
+.pytest_cache/
+htmlcov/
+.ipynb_checkpoints/ # Jupyter notebooks checkpoints
+
+# == Ruby ==
+# ==========
+.bundle/
+.sass-cache/
+capybara-browser-state.html
+log/*.log
+tmp/
+vendor/bundle/
+.rake-tasks/
+*.gem
+*.rbc
+coverage/
+InstalledFiles
+.rspec
+.rubocop_todo.yml
+
+# == PHP ==
+# =========
+vendor/ # Composer dependencies
+composer.lock # Typically committed, but sometimes ignored in very specific cases
+.env # Environment variables
+.phpunit.result.cache
+storage/*.log
+bootstrap/cache/*.php
+
+# == Java ==
+# ==========
+.gradle/
+build/
+target/ # Maven build output
+*.jar
+*.war
+*.ear
+*.class
+.project
+.classpath
+.settings/
+.idea/ # IntelliJ IDEA files
+
+# == C/C++ ==
+# ===========
+*.o
+*.obj
+*.exe
+*.out
+*.dll
+*.lib
+*.so
+*.a
+*.ilk
+*.pdb
+*.exp
+*.idb
+*.ipch/
+.vs/ # Visual Studio specific files
+Debug/
+Release/
+x64/
+Win32/
+
+# == Go ==
+# ========
+/bin/
+/pkg/
+*.exe
+*.test
+*.prof
+
+# == macOS / Xcode ==
+# ===================
+.DS_Store
+.localized
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.pcm
+*.xccheckout
+*.xcscmblueprint
+*.xctestplan
+*.dSYM
+xcuserdata/
+
+# == Windows ==
+# =============
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+System Volume Information/
+*.lnk
+
+# == Linux ==
+# ===========
+*~
+*.bak
+*.swp
+.Trash-*
+*.log
+.gnome/
+.kde/
+.local/
+.cache/
+.thumbnails/
+
+# == Other common files/directories to ignore ==
+# ==============================================
+# Editor backup files
+*~
+*.bak
+*.tmp
+*.swo
+
+# IDE/Editor specific
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# Generated documentation
+docs/
+out/
+target/site/
+
+# Test output
+test-output/
+junitreports/
+
+# Configuration files (if they contain sensitive info or are specific to your local setup)
+config/*.local.php
+config/*.secret.yml
+*.env.local
+
+# Database files
+*.sqlite3
+*.db
+*.mdb
+
+# Uploaded files
+/public/uploads/
+
+# Dependency caches (often outside the project root, but good to be aware of)
+# ~/.npm/
+# ~/.gradle/
+# ~/.m2/
+
+# User-specific local files
+*.local
+*.venv
+```
