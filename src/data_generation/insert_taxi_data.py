@@ -4,9 +4,9 @@ import random
 
 # Database connection parameters
 DB_PARAMS = {
-    'dbname': 'mydatabase',
-    'user': 'myuser',
-    'password': 'mypassword',
+    'dbname': 'nyc_taxi_db',
+    'user': 'admin',
+    'password': '123',
     'host': 'localhost',
     'port': '5432'
 }
