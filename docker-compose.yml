@@ -5,9 +5,9 @@ services:
     image: postgres:16-alpine
     restart: always
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword 
-      POSTGRES_DB: mydatabase 
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123 
+      POSTGRES_DB: nyc_taxi_db
     ports:
       - "5432:5432"
     volumes:
