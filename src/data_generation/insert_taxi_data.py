@@ -15,7 +15,6 @@ DB_PARAMS = {
 CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS taxi_trips (
     id SERIAL PRIMARY KEY,
-    vendor_id INTEGER,
     tpep_pickup_datetime TIMESTAMP,
     tpep_dropoff_datetime TIMESTAMP,
     passenger_count INTEGER,
@@ -92,12 +91,12 @@ def insert_data(conn, num_records=1000):
     """Insert simulated data into the database"""
     insert_sql = """
     INSERT INTO taxi_trips (
-        vendor_id, tpep_pickup_datetime, tpep_dropoff_datetime,
+        tpep_pickup_datetime, tpep_dropoff_datetime,
         passenger_count, trip_distance,
         pickup_longitude, pickup_latitude,
         dropoff_longitude, dropoff_latitude,
         fare_amount, tip_amount, total_amount
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     
     try:
