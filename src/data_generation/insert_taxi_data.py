@@ -73,7 +73,6 @@ def generate_trip_data(num_records=1000):
         total_amount = fare_amount + tip_amount
 
         yield (
-            random.randint(1, 2),          # vendor_id
             pickup_time,
             dropoff_time,
             random.randint(1, 6),          # passenger_count
@@ -110,6 +109,22 @@ def insert_data(conn, num_records=1000):
         conn.rollback()
         raise
 
+def generate_continous_data(interval_seconds=5, batch_size=10):
+    """Continuously generate and insert data at specified intervals"""
+    import time
+    conn = create_connection()
+    try:
+        while True:
+            insert_data(conn, batch_size)
+            time.sleep(interval_seconds)
+    except KeyboardInterrupt:
+        conn.close()
+        print("Data generation stopped by user.")
+    except Exception as e:
+        print(f"An error occurred during continuous data generation: {e}")
+        conn.rollback()
+        raise
+
 def main():
     """Main function to create table and insert data"""
     try:
@@ -127,7 +142,9 @@ def main():
         print("Data generation completed successfully!")
         
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
-    main()
+    generate_continous_data()
