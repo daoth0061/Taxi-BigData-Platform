@@ -1,8 +1,10 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database - Enhanced for CDC with Debezium
   db:
     image: postgres:16-alpine
+    container_name: postgres
     restart: always
     environment:
       POSTGRES_USER: admin
@@ -11,7 +13,145 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data # Persist database data using a named volume
+      - db_data:/var/lib/postgresql/data
+      - ./configs/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: 
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"  # Required for Debezium CDC
+      - "-c"
+      - "max_wal_senders=1"
+      - "-c"
+      - "max_replication_slots=1"
+    networks:
+      - taxi-platform
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d nyc_taxi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Apache Kafka - Using KRaft mode
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    restart: always
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      # KRaft settings
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      
+      # Listener settings
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:9093'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      
+      # Cluster settings
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'  # Must be a valid Base64 UUID
+      
+      # Log settings
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      KAFKA_LOG_RETENTION_HOURS: 168  # 7 days
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - taxi-platform
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Kafka UI - For monitoring and debugging
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      - kafka
+    networks:
+      - taxi-platform
+
+  # Debezium Connect - For Change Data Capture
+  debezium:
+    image: debezium/connect:2.5
+    container_name: debezium
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      # Kafka connection
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: debezium-group
+      CONFIG_STORAGE_TOPIC: debezium_configs
+      OFFSET_STORAGE_TOPIC: debezium_offsets
+      STATUS_STORAGE_TOPIC: debezium_statuses
+      
+      # Replication factors (set to 1 for single broker)
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      
+      # Connect settings
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - taxi-platform
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Data Generator - Your Python script containerized
+  data-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile.data-generator
+    container_name: data-generator
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: nyc_taxi_db
+      DB_USER: admin
+      DB_PASSWORD: 123
+      BATCH_SIZE: 10
+      INTERVAL_SECONDS: 5
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - taxi-platform
+
+networks:
+  taxi-platform:
+    driver: bridge
 
 volumes:
-  db_data: # Define the named volume for database persistence
+  db_data:
+  kafka_data:
