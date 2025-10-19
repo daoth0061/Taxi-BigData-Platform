@@ -247,4 +247,8 @@ config/*.secret.yml
 # User-specific local files
 *.local
 *.venv
+
+Bigdata.drawio.png
+Taxi-Big-Data-Platform-Flow.txt
+
 ```
