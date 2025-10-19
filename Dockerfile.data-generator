@@ -1,0 +1,21 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install PostgreSQL client dependencies
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the data generation script
+COPY src/data_generation/insert_taxi_data_docker.py insert_taxi_data.py
+
+# Run the data generator
+CMD ["python", "-u", "insert_taxi_data.py"]
