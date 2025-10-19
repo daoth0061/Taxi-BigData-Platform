@@ -250,5 +250,11 @@ config/*.secret.yml
 
 Bigdata.drawio.png
 Taxi-Big-Data-Platform-Flow.txt
+ARCHITECTURE_EXPLAINED.md
+DEBEZIUM_SNAPSHOT_EXPLAINED.md
+GETTING_STARTED.md
+QUICK_REFERENCE.md
+README_CDC_SETUP.md
+START_HERE.md
 
 ```
