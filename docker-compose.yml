@@ -127,26 +127,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # Data Generator - Your Python script containerized
-  data-generator:
-    build:
-      context: .
-      dockerfile: Dockerfile.data-generator
-    container_name: data-generator
-    restart: always
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: nyc_taxi_db
-      DB_USER: admin
-      DB_PASSWORD: 123
-      BATCH_SIZE: 10
-      INTERVAL_SECONDS: 5
+  # One-shot init to auto-register Debezium connector
+  debezium-init:
+    image: curlimages/curl:8.8.0
+    container_name: debezium-init
+    restart: "no"
     depends_on:
-      db:
+      debezium:
         condition: service_healthy
     networks:
       - taxi-platform
+    volumes:
+      - ./configs:/configs:ro
+    # Retry posting the connector config until Debezium is ready
+    command:
+      ["--silent", "--show-error", "--retry", "30", "--retry-delay", "2", "--retry-connrefused",
+       "-X", "POST", "-H", "Content-Type: application/json",
+       "--data", "@/configs/debezium-connector.json",
+       "http://debezium:8083/connectors"]
 
 networks:
   taxi-platform:
