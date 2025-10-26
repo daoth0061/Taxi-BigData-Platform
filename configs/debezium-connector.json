@@ -10,7 +10,7 @@
     "database.server.name": "taxi_db_server",
     "table.include.list": "public.taxi_trips",
     "plugin.name": "pgoutput",
-    "publication.autocreate.mode": "filtered",
+  "publication.autocreate.mode": "all_tables",
     "slot.name": "debezium_taxi_slot",
     "topic.prefix": "taxi",
     "key.converter": "org.apache.kafka.connect.json.JsonConverter",
