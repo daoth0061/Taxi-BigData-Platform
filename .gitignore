@@ -256,5 +256,6 @@ GETTING_STARTED.md
 QUICK_REFERENCE.md
 README_CDC_SETUP.md
 START_HERE.md
+scripts/test_cdc.py
 
 ```
