@@ -79,6 +79,18 @@ spark.sql(
         """
 )
 
+#====== Setting Iceberg table to MOW ======#
+spark.sql(
+        """
+        ALTER TABLE lakehouse.bronze.taxi_trips SET TBLPROPERTIES (
+            'format-version'='2',                 -- enable row-level deletes/updates
+            'write.delete.mode'='merge-on-read',  -- treat DELETE as MOR
+            'write.update.mode'='merge-on-read',  -- treat UPDATE/MERGE as MOR
+            'write.merge.mode'='merge-on-read'    -- treat MERGE INTO as MOR
+        )
+        """
+)
+
 df_kafka = (
     spark.readStream
     .format("kafka")
