@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, from_unixtime, to_timestamp
+from pyspark.sql.functions import from_json, col, from_unixtime, to_timestamp, unix_timestamp, avg, coalesce
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType, TimestampType, LongType
 from pyspark.sql.streaming import StreamingQueryListener
 import json
@@ -88,7 +88,11 @@ df_kafka = (
     .load()
 )
 
-df_json = df_kafka.filter(col("value").isNotNull()).selectExpr("CAST(value AS STRING)")
+df_json = (
+    df_kafka
+    .filter(col("value").isNotNull())
+    .selectExpr("CAST(value AS STRING) AS value", "timestamp AS kafka_ts")
+)
 
 schema = StructType([
     StructField("id", IntegerType()),
@@ -103,10 +107,11 @@ schema = StructType([
     StructField("fare_amount", FloatType()),
     StructField("tip_amount", FloatType()),
     StructField("total_amount", FloatType()),
-    StructField("op", StringType())
+    StructField("op", StringType()),
+    StructField("source.ts_ms", LongType())
 ])
 
-df_parsed = df_json.select(from_json(col("value"), schema).alias("data")).select("data.*")
+df_parsed = df_json.select(from_json(col("value"), schema).alias("data"), col("kafka_ts")).select("data.*", "kafka_ts")
 
 # Convert epoch ms -> timestamp, drop deletes and helper columns
 df_final = (
@@ -114,17 +119,32 @@ df_final = (
     .filter((col("op").isNull()) | (col("op") != "d"))
     .withColumn("tpep_pickup_datetime", to_timestamp(from_unixtime(col("tpep_pickup_datetime") / 1000.0)))
     .withColumn("tpep_dropoff_datetime", to_timestamp(from_unixtime(col("tpep_dropoff_datetime") / 1000.0)))
+    .withColumn("source_ts_ms", col("`source.ts_ms`"))
+    .withColumn("kafka_ts_ms", (unix_timestamp(col("kafka_ts")).cast("long") * 1000))
     .drop("op")
 )
+
+
+def _write_batch(batch_df, batch_id: int):
+    # Average end-to-end latency (DB commit -> now) in milliseconds
+    lat_df = batch_df.select(
+        (unix_timestamp().cast("long") * 1000 - coalesce(col("source_ts_ms").cast("long"), col("kafka_ts_ms").cast("long"))).alias("latency_ms")
+    )
+    avg_lat = lat_df.agg(avg("latency_ms").alias("avg_ms")).collect()[0][0]
+    print(f"[latency] batch={batch_id} avg_ms={int(avg_lat) if avg_lat is not None else 'NA'}", flush=True)
+
+    # Drop metric column and append to the Iceberg table
+    out_df = batch_df.drop("source_ts_ms", "kafka_ts_ms", "kafka_ts").drop(col("`source.ts_ms`"), "source")
+    out_df.writeTo("lakehouse.bronze.taxi_trips").append()
 
 # Stream to Iceberg, Bronze level
 query = (
     df_final.writeStream
-    .format("iceberg")
     .outputMode("append")
     .option("checkpointLocation", "s3a://lakehouse/checkpoints/bronze_taxi_trips")
     .trigger(processingTime="10 seconds")
-    .toTable("lakehouse.bronze.taxi_trips")
+    .foreachBatch(_write_batch)
+    .start()
 )
 
 query.awaitTermination()
