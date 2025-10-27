@@ -109,11 +109,13 @@ def insert_data(conn, num_records=1000):
         conn.rollback()
         raise
 
-def generate_continous_data(interval_seconds=5, batch_size=10):
+def generate_continuous_data(interval_seconds=5, batch_size=10):
     """Continuously generate and insert data at specified intervals"""
     import time
     conn = create_connection()
     try:
+        # Ensure table exists before starting inserts
+        create_table(conn)
         while True:
             insert_data(conn, batch_size)
             time.sleep(interval_seconds)
@@ -147,4 +149,4 @@ def main():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    generate_continous_data()
+    generate_continuous_data()
