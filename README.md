@@ -42,7 +42,12 @@ python src/data_generation/insert_taxi_data.py
 - Stop with Ctrl+C.
 - Data inserts will flow to Kafka via Debezium; inspect topics in Kafka UI.
 
-## 5) Tear down
+## 5) Initialize Spark Streaming from Kafka to Iceberg
+```powershell
+python src/streaming/kafka_to_iceberg.py
+```
+
+## 6) Tear down
 ```powershell
 # Stop and remove containers and data volumes
 docker compose down -v
