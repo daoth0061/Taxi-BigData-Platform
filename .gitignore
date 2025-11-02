@@ -257,5 +257,5 @@ QUICK_REFERENCE.md
 README_CDC_SETUP.md
 START_HERE.md
 scripts/test_cdc.py
-
-```
+minio_data/
+metastore_db/
