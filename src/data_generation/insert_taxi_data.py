@@ -58,24 +58,26 @@ def generate_random_location():
 
 def generate_trip_data(num_records=1000):
     """Generate simulated taxi trip data"""
+
+    PAYMENT_TYPES = [0, 1, 2, 3, 4, 5, 6]
     for _ in range(num_records):
         pickup_time = datetime.now() - timedelta(days=random.randint(0, 30))
-        # Drop-off time between pickup + 10 minutes and pickup + 120 minutes
         dropoff_time = pickup_time + timedelta(minutes=random.randint(10, 120))
         
         pickup_long, pickup_lat = generate_random_location()
         dropoff_long, dropoff_lat = generate_random_location()
         
-        # Calculate a reasonable fare based on time and distance
         trip_distance = random.uniform(0.5, 20.0)
-        fare_amount = 2.50 + (trip_distance * 2.50)  # Base fare + distance rate
-        tip_amount = fare_amount * random.uniform(0, 0.3)  # 0-30% tip
+        fare_amount = 2.50 + (trip_distance * 2.50)
+        tip_amount = fare_amount * random.uniform(0, 0.3)
         total_amount = fare_amount + tip_amount
+        
+        payment_type = random.choice(PAYMENT_TYPES)
 
         yield (
             pickup_time,
             dropoff_time,
-            random.randint(1, 6),          # passenger_count
+            random.randint(1, 6), # passenger_count
             round(trip_distance, 2),
             pickup_long,
             pickup_lat,
@@ -83,7 +85,8 @@ def generate_trip_data(num_records=1000):
             dropoff_lat,
             round(fare_amount, 2),
             round(tip_amount, 2),
-            round(total_amount, 2)
+            round(total_amount, 2),
+            payment_type
         )
 
 def insert_data(conn, num_records=1000):
