@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS taxi_trips (
     dropoff_latitude FLOAT,
     fare_amount FLOAT,
     tip_amount FLOAT,
-    total_amount FLOAT
+    total_amount FLOAT,
+    payment_type INTEGER
 );
 """
 
@@ -97,8 +98,8 @@ def insert_data(conn, num_records=1000):
         passenger_count, trip_distance,
         pickup_longitude, pickup_latitude,
         dropoff_longitude, dropoff_latitude,
-        fare_amount, tip_amount, total_amount
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        fare_amount, tip_amount, total_amount, payment_type
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
     """
     
     try:

@@ -60,19 +60,19 @@ def ensure_table(spark):
     spark.sql(
         """
         CREATE TABLE IF NOT EXISTS lakehouse.bronze.taxi_trips (
-            id INT,
-            tpep_pickup_datetime TIMESTAMP,
-            tpep_dropoff_datetime TIMESTAMP,
-            passenger_count INT,
-            trip_distance FLOAT,
-            pickup_longitude FLOAT,
-            pickup_latitude FLOAT,
-            dropoff_longitude FLOAT,
-            dropoff_latitude FLOAT,
-            fare_amount FLOAT,
-            tip_amount FLOAT,
-            total_amount FLOAT,
-            payment_type INT
+            id INTEGER,
+            tpep_pickup_datetime STRING,
+            tpep_dropoff_datetime STRING,
+            passenger_count STRING,
+            trip_distance STRING,
+            pickup_longitude STRING,
+            pickup_latitude STRING,
+            dropoff_longitude STRING,
+            dropoff_latitude STRING,
+            fare_amount STRING,
+            tip_amount STRING,
+            total_amount STRING,
+            payment_type STRING
         ) USING iceberg
         """
     )
@@ -90,20 +90,20 @@ def ensure_table(spark):
 def build_schema():
     return StructType([
         StructField("id", IntegerType()),
-        StructField("tpep_pickup_datetime", LongType()),
-        StructField("tpep_dropoff_datetime", LongType()),
-        StructField("passenger_count", IntegerType()),
-        StructField("trip_distance", FloatType()),
-        StructField("pickup_longitude", FloatType()),
-        StructField("pickup_latitude", FloatType()),
-        StructField("dropoff_longitude", FloatType()),
-        StructField("dropoff_latitude", FloatType()),
-        StructField("fare_amount", FloatType()),
-        StructField("tip_amount", FloatType()),
-        StructField("total_amount", FloatType()),
-        StructField("payment_type", IntegerType()),
+        StructField("tpep_pickup_datetime", StringType()),
+        StructField("tpep_dropoff_datetime", StringType()),
+        StructField("passenger_count", StringType()),
+        StructField("trip_distance", StringType()),
+        StructField("pickup_longitude", StringType()),
+        StructField("pickup_latitude", StringType()),
+        StructField("dropoff_longitude", StringType()),
+        StructField("dropoff_latitude", StringType()),
+        StructField("fare_amount", StringType()),
+        StructField("tip_amount", StringType()),
+        StructField("total_amount", StringType()),
+        StructField("payment_type", StringType()),
         StructField("op", StringType()),
-        StructField("source.ts_ms", LongType()),
+        StructField("source.ts_ms", StringType()),
     ])
 
 
@@ -122,8 +122,8 @@ def build_stream(spark, schema):
     df_final = (
         df_parsed
         .filter((col("op").isNull()) | (col("op") != "d"))
-        .withColumn("tpep_pickup_datetime", to_timestamp(from_unixtime(col("tpep_pickup_datetime") / 1000.0)))
-        .withColumn("tpep_dropoff_datetime", to_timestamp(from_unixtime(col("tpep_dropoff_datetime") / 1000.0)))
+        # .withColumn("tpep_pickup_datetime", to_timestamp(from_unixtime(col("tpep_pickup_datetime") / 1000.0)))
+        # .withColumn("tpep_dropoff_datetime", to_timestamp(from_unixtime(col("tpep_dropoff_datetime") / 1000.0)))
         .withColumn("source_ts_ms", col("`source.ts_ms`"))
         .withColumn("kafka_ts_ms", (unix_timestamp(col("kafka_ts")).cast("long") * 1000))
         .drop("op")
