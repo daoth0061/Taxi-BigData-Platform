@@ -1,10 +1,21 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType, TimestampType
 from datetime import datetime
 
 def update_watermark(spark, table_name, layer, new_watermark_ts):
+
+
+    print(new_watermark_ts)
+    
+    schema = StructType([
+        StructField("table_name", StringType(), False), 
+        StructField("last_watermark_ts", TimestampType(), False),  #  last_watermark 
+        StructField("updated_at", TimestampType(), False) # update_time
+    ])
+
     watermark_df = spark.createDataFrame(
         [(table_name, new_watermark_ts, datetime.now())],
-        ["table_name", "last_watermark_ts", "updated_at"]
+        schema=schema
     )
     spark.sql(f"DELETE FROM lakehouse.{layer}.watermarks WHERE table_name = '{table_name}'")
     watermark_df.writeTo(f"lakehouse.{layer}.watermarks").append()
