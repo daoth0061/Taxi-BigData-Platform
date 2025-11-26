@@ -1,8 +1,7 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, from_unixtime, to_timestamp, unix_timestamp, avg, coalesce, max as max_, lit, current_timestamp
+from pyspark.sql.functions import from_json, col, from_unixtime, to_timestamp, unix_timestamp, avg, coalesce
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType, TimestampType, LongType
 from pyspark.sql.streaming import StreamingQueryListener
-from datetime import datetime
 import json
 
 
@@ -61,18 +60,19 @@ def ensure_table(spark):
     spark.sql(
         """
         CREATE TABLE IF NOT EXISTS lakehouse.bronze.taxi_trips (
-            id INT,
-            tpep_pickup_datetime TIMESTAMP,
-            tpep_dropoff_datetime TIMESTAMP,
-            passenger_count INT,
-            trip_distance FLOAT,
-            pickup_longitude FLOAT,
-            pickup_latitude FLOAT,
-            dropoff_longitude FLOAT,
-            dropoff_latitude FLOAT,
-            fare_amount FLOAT,
-            tip_amount FLOAT,
-            total_amount FLOAT
+            id INTEGER,
+            tpep_pickup_datetime STRING,
+            tpep_dropoff_datetime STRING,
+            passenger_count STRING,
+            trip_distance STRING,
+            pickup_longitude STRING,
+            pickup_latitude STRING,
+            dropoff_longitude STRING,
+            dropoff_latitude STRING,
+            fare_amount STRING,
+            tip_amount STRING,
+            total_amount STRING,
+            payment_type STRING
         ) USING iceberg
         """
     )
@@ -86,49 +86,24 @@ def ensure_table(spark):
         )
         """
     )
-    spark.sql(
-        """
-        CREATE TABLE IF NOT EXISTS lakehouse.bronze.watermarks (
-            table_name STRING,
-            last_watermark_ts TIMESTAMP,
-            updated_at TIMESTAMP
-        ) USING iceberg
-        """
-    )
-
-
-def get_watermark(spark, table_name):
-    result = spark.sql(
-        f"SELECT last_watermark_ts FROM lakehouse.bronze.watermarks WHERE table_name = '{table_name}' ORDER BY updated_at DESC LIMIT 1"
-    ).collect()
-    return result[0][0] if result else None
-
-
-def update_watermark(spark, table_name, new_watermark_ts):
-    watermark_df = spark.createDataFrame(
-        [(table_name, new_watermark_ts, datetime.now())],
-        ["table_name", "last_watermark_ts", "updated_at"]
-    )
-    spark.sql(f"DELETE FROM lakehouse.bronze.watermarks WHERE table_name = '{table_name}'")
-    watermark_df.writeTo("lakehouse.bronze.watermarks").append()
-
 
 def build_schema():
     return StructType([
         StructField("id", IntegerType()),
-        StructField("tpep_pickup_datetime", LongType()),
-        StructField("tpep_dropoff_datetime", LongType()),
-        StructField("passenger_count", IntegerType()),
-        StructField("trip_distance", FloatType()),
-        StructField("pickup_longitude", FloatType()),
-        StructField("pickup_latitude", FloatType()),
-        StructField("dropoff_longitude", FloatType()),
-        StructField("dropoff_latitude", FloatType()),
-        StructField("fare_amount", FloatType()),
-        StructField("tip_amount", FloatType()),
-        StructField("total_amount", FloatType()),
+        StructField("tpep_pickup_datetime", StringType()),
+        StructField("tpep_dropoff_datetime", StringType()),
+        StructField("passenger_count", StringType()),
+        StructField("trip_distance", StringType()),
+        StructField("pickup_longitude", StringType()),
+        StructField("pickup_latitude", StringType()),
+        StructField("dropoff_longitude", StringType()),
+        StructField("dropoff_latitude", StringType()),
+        StructField("fare_amount", StringType()),
+        StructField("tip_amount", StringType()),
+        StructField("total_amount", StringType()),
+        StructField("payment_type", StringType()),
         StructField("op", StringType()),
-        StructField("source.ts_ms", LongType()),
+        StructField("source.ts_ms", StringType()),
     ])
 
 
@@ -147,8 +122,8 @@ def build_stream(spark, schema):
     df_final = (
         df_parsed
         .filter((col("op").isNull()) | (col("op") != "d"))
-        .withColumn("tpep_pickup_datetime", to_timestamp(from_unixtime(col("tpep_pickup_datetime") / 1000.0)))
-        .withColumn("tpep_dropoff_datetime", to_timestamp(from_unixtime(col("tpep_dropoff_datetime") / 1000.0)))
+        # .withColumn("tpep_pickup_datetime", to_timestamp(from_unixtime(col("tpep_pickup_datetime") / 1000.0)))
+        # .withColumn("tpep_dropoff_datetime", to_timestamp(from_unixtime(col("tpep_dropoff_datetime") / 1000.0)))
         .withColumn("source_ts_ms", col("`source.ts_ms`"))
         .withColumn("kafka_ts_ms", (unix_timestamp(col("kafka_ts")).cast("long") * 1000))
         .drop("op")
@@ -172,17 +147,6 @@ def write_batch(batch_df, batch_id: int):
     out_df = batch_df.drop("source_ts_ms", "kafka_ts_ms", "kafka_ts").drop(col("`source.ts_ms`"), "source")
     out_df.writeTo("lakehouse.bronze.taxi_trips").append()
     
-    max_source_ts = batch_df.select(
-        coalesce(max_(col("source_ts_ms")), max_(col("kafka_ts_ms"))).alias("max_ts")
-    ).collect()[0][0]
-    
-    if max_source_ts:
-        max_ts_timestamp = datetime.fromtimestamp(max_source_ts / 1000.0)
-        spark = batch_df.sparkSession
-        update_watermark(spark, "taxi_trips", max_ts_timestamp)
-        print(f"[watermark] batch={batch_id} updated to {max_ts_timestamp}", flush=True)
-    else:
-        print(f"[watermark] batch={batch_id} skipped - max_source_ts is None", flush=True)
 
 
 def main():

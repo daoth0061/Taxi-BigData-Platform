@@ -1,0 +1,7 @@
+zone_id,zone_name,lat_min,lat_max,lon_min,lon_max
+1, 'Manhattan',     40.70, 40.88, -74.03, -73.92
+2, 'Brooklyn',      40.57, 40.73, -74.05, -73.85
+3, 'Queens',        40.54, 40.80, -73.96, -73.70
+4, 'Bronx',         40.79, 40.92, -73.93, -73.76
+5, 'Staten Island', 40.48, 40.65, -74.26, -74.05
+-1, "Unknown",      None,  None,  None,  None

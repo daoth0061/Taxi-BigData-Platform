@@ -162,6 +162,25 @@ services:
     networks:
       - taxi-platform
 
+  mc:
+    depends_on:
+      - minio
+    image: minio/mc
+    container_name: mc
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=12345678
+      - AWS_REGION=us-east-1
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set minio http://minio:9000 admin 12345678) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc rm -r --force minio/lakehouse;
+      /usr/bin/mc mb minio/lakehouse;
+      /usr/bin/mc policy set public minio/lakehouse;
+      tail -f /dev/null
+      " 
+    networks:
+      - taxi-platform
 networks:
   taxi-platform:
     driver: bridge
