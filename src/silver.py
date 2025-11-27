@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Thêm path để import helpers khi chạy từ Spark submit
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from helpers.utils import get_watermark, get_spark, update_watermark
 from pyspark.sql.functions import from_json, col, from_unixtime, to_timestamp, unix_timestamp, avg, coalesce
 from pyspark.sql.functions import udf, StringType
