@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Đợi Airflow sẵn sàng
+# Wait for Airflow to be fully up and running
 sleep 10
 
-# Tạo Spark connection
+# Create Spark connection
 airflow connections delete spark_default 2>/dev/null || true
 airflow connections add spark_default \
     --conn-type spark \

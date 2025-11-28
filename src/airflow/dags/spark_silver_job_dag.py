@@ -14,7 +14,7 @@ with DAG(
     dag_id='spark_silver_job',
     default_args=default_args,
     description='Run Spark Silver job daily',
-    schedule_interval='0 2 * * *',  # chạy mỗi ngày lúc 2h sáng
+    schedule_interval='0 2 * * *',
     start_date=datetime(2025, 11, 1),
     catchup=False,
     tags=['spark', 'silver'],

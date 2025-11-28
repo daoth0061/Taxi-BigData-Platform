@@ -195,9 +195,12 @@ services:
       - taxi-platform
 
   airflow:
+    build:
+      context: ./src/airflow
+      dockerfile: Dockerfile.airflow
     image: airflow-java:2.10.0
     container_name: airflow
-    hostname: airflow        # <--- fix hostname
+    hostname: airflow
     restart: always
     depends_on:
       - airflow-db
@@ -217,8 +220,8 @@ services:
     volumes:
       - ./src/airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
-      - ./airflow-requirements.txt:/airflow-requirements.txt
-      - ./airflow/logs:/opt/airflow/logs     # <--- mount logs
+      - ./src/airflow/airflow-requirements.txt:/airflow-requirements.txt
+      - ./airflow/logs:/opt/airflow/logs
     command: >
       bash -c "
         pip install --no-cache-dir -r /airflow-requirements.txt &&
@@ -230,7 +233,6 @@ services:
       "
     networks:
       - taxi-platform
-# apache/spark:3.5.2
   spark-master:
     image: bitnamilegacy/spark:3.5.1-debian-12-r9
     container_name: spark-master
@@ -255,22 +257,6 @@ services:
       - "8084:8081"
     networks:
       - taxi-platform
-    
-
-  # spark-history:
-  #   image: bitnamilegacy/spark:3.5.1-debian-12-r9
-  #   container_name: spark-history
-  #   volumes:
-  #     - ./spark-events:/tmp/spark-events
-  #   environment:
-  #     - SPARK_MODE=history-server
-  #     - SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=/tmp/spark-events
-  #   ports:
-  #     - "18080:18080"
-  #   networks:
-  #     - taxi-platform
-
-
 
 networks:
   taxi-platform:

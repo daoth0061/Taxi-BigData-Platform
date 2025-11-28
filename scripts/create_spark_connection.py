@@ -3,7 +3,7 @@ from airflow import settings
 from airflow.models import Connection
 import sys
 
-# Xoa connection cu neu co
+# Delete old connection if exists
 session = settings.Session()
 conn = session.query(Connection).filter(Connection.conn_id == 'spark_default').first()
 if conn:
@@ -11,11 +11,11 @@ if conn:
     session.commit()
     print("Deleted old spark_default connection")
 
-# Tao connection moi
+# Create new connection
 new_conn = Connection(
     conn_id='spark_default',
     conn_type='spark',
-    host='spark-master',
+    host='spark://spark-master',
     port=7077,
     extra='{"deploy-mode": "client"}'
 )

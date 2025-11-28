@@ -19,12 +19,10 @@ def get_watermark(spark, layer, table_name):
 
 
 def get_spark():
-    # Neu da co SparkSession (chay tu spark-submit), chi can lay ra
     existing_spark = SparkSession.getActiveSession()
     if existing_spark is not None:
         return existing_spark
     
-    # Neu chua co (chay local), tao moi voi day du config
     spark = SparkSession.builder.appName("TaxiStreamToIceberg") \
         .config(
             "spark.jars.packages",
