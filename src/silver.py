@@ -29,6 +29,11 @@ spark.sql(
     """
 )
 
+if not spark.catalog.tableExists("lakehouse.bronze.taxi_trips"):
+    print("Bronze table does not exist. Exiting...")
+    spark.stop()
+    exit(0)
+
 
 last_updated = get_watermark(spark, "bronze", "taxi_trips")
 
