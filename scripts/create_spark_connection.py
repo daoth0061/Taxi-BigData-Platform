@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from airflow import settings
 from airflow.models import Connection
-import sys
 
 # Delete old connection if exists
 session = settings.Session()
