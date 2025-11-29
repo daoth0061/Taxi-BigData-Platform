@@ -39,6 +39,7 @@ Thumbs.db
 .npmignore
 .env # Environment variables
 .vscode/ # VS Code specific files (settings, launch configs)
+bigdata-env/ # Python virtual environment
 *.sublime-project
 *.sublime-workspace
 *.idea/ # IntelliJ/WebStorm/etc. IDE files
@@ -257,5 +258,11 @@ QUICK_REFERENCE.md
 README_CDC_SETUP.md
 START_HERE.md
 scripts/test_cdc.py
+scripts/check_services.ps1
 minio_data/
 metastore_db/
+
+# == Apache Airflow ==
+# ====================
+db_data/
+logs/

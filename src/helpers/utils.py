@@ -30,9 +30,11 @@ def get_watermark(spark, layer, table_name):
 
 
 def get_spark():
-    return (
-        SparkSession.builder
-        .appName("TaxiStreamToIceberg")
+    existing_spark = SparkSession.getActiveSession()
+    if existing_spark is not None:
+        return existing_spark
+    
+    spark = SparkSession.builder.appName("TaxiStreamToIceberg") \
         .config(
             "spark.jars.packages",
             ",".join([
@@ -41,17 +43,18 @@ def get_spark():
                 "org.apache.hadoop:hadoop-aws:3.3.4",
                 "com.amazonaws:aws-java-sdk-bundle:1.12.767",
             ])
-        )
-        .config("spark.sql.catalog.lakehouse", "org.apache.iceberg.spark.SparkCatalog")
-        .config("spark.sql.catalog.lakehouse.type", "hadoop")
-        .config("spark.sql.catalog.lakehouse.warehouse", "s3a://lakehouse/warehouse")
-        .config("spark.hadoop.fs.s3a.endpoint", "http://localhost:9000")
-        .config("spark.hadoop.fs.s3a.access.key", "admin")
-        .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-        .config("spark.hadoop.fs.s3a.secret.key", "12345678")
-        .config("spark.hadoop.fs.s3a.path.style.access", "true")
-        .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-        .config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
-        .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
+        ) \
+        .config("spark.sql.catalog.lakehouse", "org.apache.iceberg.spark.SparkCatalog") \
+        .config("spark.sql.catalog.lakehouse.type", "hadoop") \
+        .config("spark.sql.catalog.lakehouse.warehouse", "s3a://lakehouse/warehouse") \
+        .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000") \
+        .config("spark.hadoop.fs.s3a.access.key", "admin") \
+        .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
+        .config("spark.hadoop.fs.s3a.secret.key", "12345678") \
+        .config("spark.hadoop.fs.s3a.path.style.access", "true") \
+        .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
+        .config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
+        .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false") \
         .getOrCreate()
-    )
+    
+    return spark
