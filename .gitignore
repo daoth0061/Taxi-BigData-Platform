@@ -264,5 +264,5 @@ metastore_db/
 
 # == Apache Airflow ==
 # ====================
-/airflow/        # chỉ ignore folder airflow ở root
-!src/airflow/    # cho phép track folder airflow trong src
+db_data/
+logs/
