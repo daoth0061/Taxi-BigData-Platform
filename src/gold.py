@@ -128,6 +128,14 @@ if not df.rdd.isEmpty():
 
     fact_trip_df = (
         df
+        .withColumn(
+            "pickup_datetime_sk",
+            F.date_format(col("tpep_pickup_datetime"), "yyyyMMddHH").cast("long")
+        )
+        .withColumn(
+            "dropoff_datetime_sk",
+            F.date_format(col("tpep_dropoff_datetime"), "yyyyMMddHH").cast("long")
+        )
         # pickup zone join
         .join(
             dim_zone_df.alias("p"),
@@ -143,6 +151,8 @@ if not df.rdd.isEmpty():
             "left"
         )
         .select(
+            "pickup_datetime_sk",
+            "dropoff_datetime_sk",
             F.coalesce(F.col("p.zone_id"), F.lit(-1)).alias("pickup_zone_id"),
             F.coalesce(F.col("d.zone_id"), F.lit(-1)).alias("dropoff_zone_id"),
             "passenger_count",
@@ -154,3 +164,31 @@ if not df.rdd.isEmpty():
             "trip_duration_minutes"
         )
     )
+
+    fact_trip_df.createOrReplaceTempView("fact_trip_temp")
+    spark.sql("""
+        CREATE TABLE IF NOT EXISTS lakehouse.gold.fact_trip (
+            pickup_datetime_sk BIGINT,
+            dropoff_datetime_sk BIGINT,
+            pickup_zone_id INT,
+            dropoff_zone_id INT,
+            passenger_count INT,
+            trip_distance FLOAT,
+            fare_amount FLOAT,
+            tip_amount FLOAT,
+            total_amount FLOAT,
+            payment_type STRING,
+            trip_duration_minutes FLOAT
+        ) USING iceberg
+    """)
+    
+    spark.sql("""
+        MERGE INTO lakehouse.gold.fact_trip AS target
+        USING fact_trip_temp AS source
+        ON target.pickup_datetime_sk = source.pickup_datetime_sk
+        AND target.dropoff_datetime_sk = source.dropoff_datetime_sk
+        AND target.pickup_zone_id = source.pickup_zone_id
+        AND target.dropoff_zone_id = source.dropoff_zone_id
+        WHEN NOT MATCHED THEN
+        INSERT *
+    """)
