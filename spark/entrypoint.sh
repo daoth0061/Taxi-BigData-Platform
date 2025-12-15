@@ -24,7 +24,6 @@ elif [[ $SPARK_WORKLOAD =~ "worker" ]]; then
 
   /bin/bash /opt/spark/sbin/start-worker.sh spark://spark-master:7077
 
-  pip install great_expectations==0.18.20
 
 elif [ "$SPARK_WORKLOAD" == "history" ]; then
 
