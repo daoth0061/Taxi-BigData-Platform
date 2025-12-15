@@ -46,6 +46,12 @@ python src/data_generation/insert_taxi_data.py
 ```powershell
 python src/streaming/kafka_to_iceberg.py
 ```
+## 6) Connect Spark SQL in Superset 
+
+- SparkSQL connection URL 
+```
+hive://hive@spark-thrift:10000/default
+```
 
 ## 6) Tear down
 ```powershell
