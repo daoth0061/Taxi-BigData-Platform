@@ -8,17 +8,17 @@ services:
     restart: always
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 123 
+      POSTGRES_PASSWORD: 123
       POSTGRES_DB: nyc_taxi_db
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./configs/postgresql.conf:/etc/postgresql/postgresql.conf
-    command: 
+    command:
       - "postgres"
       - "-c"
-      - "wal_level=logical"  # Required for Debezium CDC
+      - "wal_level=logical" # Required for Debezium CDC
       - "-c"
       - "max_wal_senders=1"
       - "-c"
@@ -45,22 +45,22 @@ services:
       KAFKA_PROCESS_ROLES: 'broker,controller'
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      
+
       # Listener settings
       KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:9093'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      
+
       # Cluster settings
-      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'  # Must be a valid Base64 UUID
-      
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk' # Must be a valid Base64 UUID
+
       # Log settings
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: '/var/lib/kafka/data'
-      KAFKA_LOG_RETENTION_HOURS: 168  # 7 days
+      KAFKA_LOG_RETENTION_HOURS: 168 # 7 days
       KAFKA_LOG_SEGMENT_BYTES: 1073741824
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
     volumes:
@@ -103,12 +103,12 @@ services:
       CONFIG_STORAGE_TOPIC: debezium_configs
       OFFSET_STORAGE_TOPIC: debezium_offsets
       STATUS_STORAGE_TOPIC: debezium_statuses
-      
+
       # Replication factors (set to 1 for single broker)
       CONFIG_STORAGE_REPLICATION_FACTOR: 1
       OFFSET_STORAGE_REPLICATION_FACTOR: 1
       STATUS_STORAGE_REPLICATION_FACTOR: 1
-      
+
       # Connect settings
       KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
@@ -154,11 +154,11 @@ services:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: 12345678
     ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console
+      - "9000:9000" # API
+      - "9001:9001" # Console
     command: server /data --console-address ":9001"
     volumes:
-      - ./minio_data:/data
+      - minio_data:/data
     networks:
       - taxi-platform
 
@@ -178,9 +178,135 @@ services:
       /usr/bin/mc mb minio/lakehouse;
       /usr/bin/mc policy set public minio/lakehouse;
       tail -f /dev/null
-      " 
+      "
     networks:
       - taxi-platform
+  flink-jobmanager:
+    image: flink:1.19
+    container_name: flink-jobmanager
+    restart: always
+    ports:
+      - "8081:8081"   # Flink UI
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+    networks:
+      - taxi-platform
+
+  flink-taskmanager:
+    image: flink:1.19
+    container_name: flink-taskmanager
+    restart: always
+    depends_on:
+      - flink-jobmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+    networks:
+      - taxi-platform
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    restart: always
+    ports:
+      - "9042:9042" # CQL port for clients (Flink, apps)
+    environment:
+      CASSANDRA_CLUSTER_NAME: "TaxiCluster"
+      CASSANDRA_NUM_TOKENS: 256
+      CASSANDRA_START_RPC: "true"
+      CASSANDRA_RPC_ADDRESS: 0.0.0.0
+      CASSANDRA_BROADCAST_RPC_ADDRESS: cassandra
+      CASSANDRA_BROADCAST_ADDRESS: cassandra
+      CASSANDRA_SEEDS: cassandra
+      MAX_HEAP_SIZE: "1G"
+      HEAP_NEWSIZE: "256M"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    networks:
+      - taxi-platform
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 8
+
+  metastore_db:
+    image: postgres
+    container_name: metastore_db
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: metastore
+    networks:
+      - taxi-platform 
+    volumes:
+      - metastore_db_data:/var/lib/postgresql/data 
+
+  hive-metastore:
+    image: naushadh/hive-metastore
+    container_name: hive-metastore
+    depends_on:
+      - metastore_db
+      - minio
+    environment:
+      - DATABASE_HOST=metastore_db
+      - DATABASE_DB=metastore
+      - DATABASE_USER=hive
+      - DATABASE_PASSWORD=hive
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=12345678
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_BUCKET=lakehouse
+      - S3_PREFIX='hive'
+    ports:
+      - 9083:9083
+    networks:
+      - taxi-platform
+
+  spark-thrift:
+    container_name: spark-thrift
+    image: spark:3.5.6-scala2.12-java17-python3-ubuntu
+    entrypoint: ['./entrypoint.sh', 'thrift' ]
+    volumes:
+      - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./data:/opt/spark/data
+      - spark-logs:/opt/spark/spark-events 
+    ports:
+      - 10000:10000
+    depends_on:
+      - hive-metastore
+      - minio
+    networks:
+      - taxi-platform 
+
+  superset:
+    image: ducngoquang/superset
+    # build: ./superset
+    container_name: superset
+    environment:
+      - SUPERSET_SECRET_KEY=secret
+    ports:
+      - 8088:8088
+    networks:
+      - taxi-platform 
+    depends_on:
+      - spark-thrift
+    volumes:
+      - superset_data:/app/superset_home 
+    entrypoint: >
+      /bin/sh -c "
+      superset fab create-admin --username admin --firstname superset --lastname admin --email admin@superset.com --password admin;
+      superset db upgrade;
+      superset init;
+      superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger;
+      "
+
   airflow-db:
     image: postgres:16-alpine
     container_name: airflow-db
@@ -257,7 +383,6 @@ services:
       - "8084:8081"
     networks:
       - taxi-platform
-
 networks:
   taxi-platform:
     driver: bridge
@@ -265,3 +390,8 @@ networks:
 volumes:
   db_data:
   kafka_data:
+  cassandra_data:
+  minio_data: 
+  metastore_db_data:
+  spark-logs:
+  superset_data:
