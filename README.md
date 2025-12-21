@@ -52,8 +52,9 @@ python src/streaming/kafka_to_iceberg.py
 ```
 hive://hive@spark-thrift:10000/default
 ```
+## 7) Upload src/taxi_zone.csv to Minio at localhost:9001 
 
-## 6) Tear down
+## 8) Tear down
 ```powershell
 # Stop and remove containers and data volumes
 docker compose down -v

@@ -3,7 +3,7 @@ from pyspark.sql.functions import from_json, col, from_unixtime, to_timestamp, u
 from pyspark.sql.functions import udf, StringType
 import pyspark.sql.functions as F
 
-dim_zone_path = "s3://lakehouse/gold/dim_zone/taxi_zone.csv"
+dim_zone_path = "s3a://lakehouse/taxi_zone.csv"
 
 spark = get_spark()
 
@@ -12,7 +12,7 @@ spark.sql(
     """
     CREATE TABLE IF NOT EXISTS lakehouse.silver.watermarks (
         table_name STRING,
-        last_watermark_ts TIMESTAMP,
+        last_watermark_ts LONG,
         updated_at TIMESTAMP
     ) USING iceberg
     """
@@ -31,19 +31,23 @@ last_updated = get_watermark(spark, "silver", "taxi_trips")
 if last_updated: 
     df = spark.sql(f"""
                    SELECT * from lakehouse.silver.taxi_trips
-                   WHERE tpep_pickup_datetime > '{last_updated}'
-                   """)
+                   WHERE CAST(tpep_pickup_datetime AS LONG) > '{int(last_updated)}'
+                   """)   
 else :
     df = spark.sql("SELECT * from lakehouse.silver.taxi_trips")
 
 
 if not df.rdd.isEmpty():
 
+    new_ts = df.agg(F.max("tpep_pickup_datetime").cast("long")).first()[0]
+
     ### Dim datetime Table
 
-    unique_dates = df.select(F.col("tpep_pickup_datetime").alias("date_key") \
-                             .union(df.select(F.col("tpep_dropoff_datetime").alias("date_key")))) \
-                             .distinct().dropna()
+    pickup_df = df.select(F.col("tpep_pickup_datetime").alias("date_key"))
+
+    dropoff_df = df.select(F.col("tpep_dropoff_datetime").alias("date_key"))
+
+    unique_dates = pickup_df.union(dropoff_df).distinct().dropna()
 
     # surrogate key would be in the format YYYYMMDD since it would always be 
 
@@ -92,7 +96,7 @@ if not df.rdd.isEmpty():
     )
 
 
-    dim_datetime_df.createOrReplaceTempView("dim_date_temp")
+    dim_datetime_df.createOrReplaceTempView("dim_datetime_temp")
     spark.sql("""
         CREATE TABLE IF NOT EXISTS lakehouse.gold.dim_datetime (
             datetime_sk BIGINT,
@@ -125,6 +129,8 @@ if not df.rdd.isEmpty():
         header=True,
         inferSchema=True) 
 
+    if not spark.catalog.tableExists("lakehouse.gold.dim_zone"):
+        dim_zone_df.writeTo("lakehouse.gold.dim_zone").using("iceberg").create()
 
     fact_trip_df = (
         df
@@ -136,18 +142,16 @@ if not df.rdd.isEmpty():
             "dropoff_datetime_sk",
             F.date_format(col("tpep_dropoff_datetime"), "yyyyMMddHH").cast("long")
         )
-        # pickup zone join
         .join(
             dim_zone_df.alias("p"),
-            (df.pickup_lat.between(F.col("p.lat_min"), F.col("p.lat_max"))) &
-            (df.pickup_lon.between(F.col("p.lon_min"), F.col("p.lon_max"))),
+            (df.pickup_latitude.between(F.col("p.lat_min"), F.col("p.lat_max"))) &
+            (df.pickup_longitude.between(F.col("p.lon_min"), F.col("p.lon_max"))),
             "left"
         )
-        # dropoff zone join
         .join(
             dim_zone_df.alias("d"),
-            (df.dropoff_lat.between(F.col("d.lat_min"), F.col("d.lat_max"))) &
-            (df.dropoff_lon.between(F.col("d.lon_min"), F.col("d.lon_max"))),
+            (df.dropoff_latitude.between(F.col("d.lat_min"), F.col("d.lat_max"))) &
+            (df.dropoff_longitude.between(F.col("d.lon_min"), F.col("d.lon_max"))),
             "left"
         )
         .select(
@@ -192,3 +196,6 @@ if not df.rdd.isEmpty():
         WHEN NOT MATCHED THEN
         INSERT *
     """)
+
+    update_watermark(spark, "taxi_trips", "silver", new_ts)
+
