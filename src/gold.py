@@ -30,8 +30,8 @@ last_updated = get_watermark(spark, "silver", "taxi_trips")
 
 if last_updated: 
     df = spark.sql(f"""
-                   SELECT * from lakehouse.bronze.taxi_trips
-                   WHERE CAST(tpep_pickup_datetime AS LONG)> '{last_updated}'
+                   SELECT * from lakehouse.silver.taxi_trips
+                   WHERE CAST(tpep_pickup_datetime AS LONG) > '{int(last_updated)}'
                    """)   
 else :
     df = spark.sql("SELECT * from lakehouse.silver.taxi_trips")
