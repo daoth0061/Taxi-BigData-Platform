@@ -57,7 +57,7 @@ def generate_random_location():
         random.uniform(40.63, 40.85)      # latitude
     )
 
-def generate_trip_data(num_records=1000):
+def generate_trip_data_past(num_records=10000):
     """Generate simulated taxi trip data"""
 
     PAYMENT_TYPES = [0, 1, 2, 3, 4, 5, 6]
@@ -90,6 +90,65 @@ def generate_trip_data(num_records=1000):
             payment_type
         )
 
+
+
+def generate_trip_data(num_records=1000):
+    """Generate simulated taxi trip data"""
+
+    PAYMENT_TYPES = [0, 1, 2, 3, 4, 5, 6]
+    for _ in range(num_records):
+        pickup_time = datetime.now()
+        dropoff_time = pickup_time + timedelta(minutes=random.randint(10, 120))
+        
+        pickup_long, pickup_lat = generate_random_location()
+        dropoff_long, dropoff_lat = generate_random_location()
+        
+        trip_distance = random.uniform(0.5, 20.0)
+        fare_amount = 2.50 + (trip_distance * 2.50)
+        tip_amount = fare_amount * random.uniform(0, 0.3)
+        total_amount = fare_amount + tip_amount
+        
+        payment_type = random.choice(PAYMENT_TYPES)
+
+        yield (
+            pickup_time,
+            dropoff_time,
+            random.randint(1, 6), # passenger_count
+            round(trip_distance, 2),
+            pickup_long,
+            pickup_lat,
+            dropoff_long,
+            dropoff_lat,
+            round(fare_amount, 2),
+            round(tip_amount, 2),
+            round(total_amount, 2),
+            payment_type
+        )
+
+def insert_data_past(conn, num_records=1000):
+    """Insert simulated past data into the database"""
+    insert_sql = """
+    INSERT INTO taxi_trips (
+        tpep_pickup_datetime, tpep_dropoff_datetime,
+        passenger_count, trip_distance,
+        pickup_longitude, pickup_latitude,
+        dropoff_longitude, dropoff_latitude,
+        fare_amount, tip_amount, total_amount, payment_type
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+    """
+    
+    try:
+        with conn.cursor() as cur:
+            for record in generate_trip_data_past(num_records):
+                cur.execute(insert_sql, record)
+            conn.commit()
+            print(f"Successfully inserted past {num_records} records")
+    except psycopg2.Error as e:
+        print(f"Error inserting data: {e}")
+        conn.rollback()
+        raise
+
+
 def insert_data(conn, num_records=1000):
     """Insert simulated data into the database"""
     insert_sql = """
@@ -120,6 +179,7 @@ def generate_continuous_data(interval_seconds=5, batch_size=10):
     try:
         # Ensure table exists before starting inserts
         create_table(conn)
+        insert_data_past(conn,num_records=1000)
         while True:
             insert_data(conn, batch_size)
             time.sleep(interval_seconds)

@@ -18,12 +18,11 @@ def payment_map(payment_type : str) -> StringType:
         }.get(payment_type, "N/A")
 
 
-
 spark.sql(
     """
     CREATE TABLE IF NOT EXISTS lakehouse.bronze.watermarks (
         table_name STRING,
-        last_watermark_ts TIMESTAMP,
+        last_watermark_ts LONG,
         updated_at TIMESTAMP
     ) USING iceberg
     """
@@ -42,12 +41,14 @@ last_updated = get_watermark(spark, "bronze", "taxi_trips")
 if last_updated: 
     df = spark.sql(f"""
                    SELECT * from lakehouse.bronze.taxi_trips
-                   WHERE tpep_pickup_datetime > '{last_updated}'
-                   """)
+                   WHERE CAST(tpep_pickup_datetime AS LONG)> '{last_updated}'
+                   """)   
 else :
     df = spark.sql("SELECT * from lakehouse.bronze.taxi_trips")
 
 if not df.rdd.isEmpty():
+
+    new_ts = df.agg(F.max("tpep_pickup_datetime").cast("long")).first()[0]
 
     df = df.withColumn("tpep_pickup_datetime", to_timestamp(from_unixtime(col("tpep_pickup_datetime") / 1000.0))) \
             .withColumn("tpep_dropoff_datetime", to_timestamp(from_unixtime(col("tpep_dropoff_datetime") / 1000.0))) \
@@ -79,20 +80,15 @@ if not df.rdd.isEmpty():
     df = df.distinct()
 
 
-    update_watermark(spark, "taxi_trips", "bronze", df.agg(F.max("tpep_pickup_datetime")).first()[0])
-
     df.printSchema()
     df.createOrReplaceTempView("tmp_taxi_trips")
 
-    spark.sql("""
-    CREATE TABLE IF NOT EXISTS lakehouse.silver.taxi_trips
-    USING iceberg
-    AS SELECT * FROM tmp_taxi_trips
-    """)
+    if not spark.catalog.tableExists("lakehouse.silver.taxi_trips"):
+        df.writeTo("lakehouse.silver.taxi_trips").using("iceberg").create()
+    else:
+        df.writeTo("lakehouse.silver.taxi_trips").append()
 
-
-    df.writeTo("lakehouse.silver.taxi_trips").append()
-
+    update_watermark(spark, "taxi_trips", "bronze", new_ts)
 
 
 spark.stop()

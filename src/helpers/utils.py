@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, TimestampType
+from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType
 from datetime import datetime
 
 def update_watermark(spark, table_name, layer, new_watermark_ts):
@@ -9,7 +9,7 @@ def update_watermark(spark, table_name, layer, new_watermark_ts):
     
     schema = StructType([
         StructField("table_name", StringType(), False), 
-        StructField("last_watermark_ts", TimestampType(), False),  #  last_watermark 
+        StructField("last_watermark_ts", LongType(), False),  #  last_watermark 
         StructField("updated_at", TimestampType(), False) # update_time
     ])
 
@@ -47,7 +47,7 @@ def get_spark():
         .config("spark.sql.catalog.lakehouse", "org.apache.iceberg.spark.SparkCatalog") \
         .config("spark.sql.catalog.lakehouse.type", "hadoop") \
         .config("spark.sql.catalog.lakehouse.warehouse", "s3a://lakehouse/warehouse") \
-        .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000") \
+        .config("spark.hadoop.fs.s3a.endpoint", "http://localhost:9000") \
         .config("spark.hadoop.fs.s3a.access.key", "admin") \
         .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
         .config("spark.hadoop.fs.s3a.secret.key", "12345678") \
@@ -55,6 +55,8 @@ def get_spark():
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
         .config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
         .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false") \
+        .config("spark.sql.session.timeZone", "UTC") \
+        .config("spark.driver.memory", "4g") \
         .getOrCreate()
     
     return spark
