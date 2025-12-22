@@ -360,11 +360,16 @@ services:
     networks:
       - taxi-platform
   spark-master:
-    image: bitnamilegacy/spark:3.5.1-debian-12-r9
+    image: ducngoquang/spark:3.5.6-scala2.12-java17-python3-ge
     container_name: spark-master
     entrypoint: ["/opt/spark/work-dir/entrypoint.sh", "master"]
     volumes:
       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./spark/metrics.properties:/opt/spark/conf/metrics.properties
+      - ./spark/jobs:/opt/spark/work-dir/jobs
+      - ./data:/opt/spark/data
+      - spark-logs:/opt/spark/spark-events
     ports:
       - "7077:7077"
       - "8082:8080"
@@ -372,11 +377,15 @@ services:
       - taxi-platform
 
   spark-worker:
-    image: bitnamilegacy/spark:3.5.1-debian-12-r9
+    image: ducngoquang/spark:3.5.6-scala2.12-java17-python3-ge
     container_name: spark-worker
     entrypoint: ["/opt/spark/work-dir/entrypoint.sh", "worker"]
     volumes:
       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./spark/metrics.properties:/opt/spark/conf/metrics.properties
+      - ./data:/opt/spark/data
+      - spark-logs:/opt/spark/spark-events
     depends_on:
       - spark-master
     ports:
