@@ -360,11 +360,16 @@ services:
     networks:
       - taxi-platform
   spark-master:
-    image: bitnamilegacy/spark:3.5.1-debian-12-r9
+    image: ducngoquang/spark:3.5.6-iceberg
     container_name: spark-master
     entrypoint: ["/opt/spark/work-dir/entrypoint.sh", "master"]
     volumes:
       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./spark/metrics.properties:/opt/spark/conf/metrics.properties
+      - ./spark/jobs:/opt/spark/work-dir/jobs
+      - ./data:/opt/spark/data
+      - spark-logs:/opt/spark/spark-events
     ports:
       - "7077:7077"
       - "8082:8080"
@@ -372,15 +377,44 @@ services:
       - taxi-platform
 
   spark-worker:
-    image: bitnamilegacy/spark:3.5.1-debian-12-r9
+    image: ducngoquang/spark:3.5.6-scala2.12-java17-python3-ge
     container_name: spark-worker
     entrypoint: ["/opt/spark/work-dir/entrypoint.sh", "worker"]
     volumes:
       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./spark/metrics.properties:/opt/spark/conf/metrics.properties
+      - ./data:/opt/spark/data
+      - spark-logs:/opt/spark/spark-events
     depends_on:
       - spark-master
     ports:
       - "8084:8081"
+    networks:
+      - taxi-platform
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - taxi-platform
+
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
     networks:
       - taxi-platform
 networks:

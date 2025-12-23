@@ -72,6 +72,7 @@ Use this connection URL in Superset:
 ```
 hive://hive@spark-thrift:10000/default
 ```
+## 7) Upload src/taxi_zone.csv to Minio at localhost:9001 
 
 ---
 

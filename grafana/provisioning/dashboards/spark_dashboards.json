@@ -1,0 +1,326 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "title": "Spark Cluster Metrics",
+  "tags": ["spark", "cluster", "monitoring"],
+  "timezone": "browser",
+  "schemaVersion": 16,
+  "version": 0,
+  "refresh": "30s",
+  "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "type": "graph",
+        "title": "Master - Workers Status",
+        "targets": [
+          {
+            "expr": "metrics_master_aliveWorkers_Value",
+            "legendFormat": "Alive Workers",
+            "refId": "A"
+          },
+          {
+            "expr": "metrics_master_workers_Value",
+            "legendFormat": "Total Workers",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Workers"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true},
+        "lines": true,
+        "fill": 1
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "type": "graph",
+        "title": "Master - Applications",
+        "targets": [
+          {
+            "expr": "metrics_master_apps_Value",
+            "legendFormat": "Active Apps",
+            "refId": "A"
+          },
+          {
+            "expr": "metrics_master_waitingApps_Value",
+            "legendFormat": "Waiting Apps",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Applications"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true},
+        "lines": true,
+        "fill": 1
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "type": "graph",
+        "title": "Worker - CPU Cores",
+        "targets": [
+          {
+            "expr": "metrics_worker_coresFree_Value",
+            "legendFormat": "Free Cores",
+            "refId": "A"
+          },
+          {
+            "expr": "metrics_worker_coresUsed_Value",
+            "legendFormat": "Used Cores",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Cores"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true},
+        "lines": true,
+        "fill": 1,
+        "stack": true
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "type": "graph",
+        "title": "Worker - Memory Usage",
+        "targets": [
+          {
+            "expr": "metrics_worker_memFree_MB_Value",
+            "legendFormat": "Free Memory (MB)",
+            "refId": "A"
+          },
+          {
+            "expr": "metrics_worker_memUsed_MB_Value",
+            "legendFormat": "Used Memory (MB)",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "mbytes", "label": "Memory"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true},
+        "lines": true,
+        "fill": 1,
+        "stack": true
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 16},
+        "type": "stat",
+        "title": "Executors",
+        "targets": [
+          {
+            "expr": "metrics_worker_executors_Value",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 16},
+        "type": "stat",
+        "title": "Alive Workers",
+        "targets": [
+          {
+            "expr": "metrics_master_aliveWorkers_Value",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 16},
+        "type": "stat",
+        "title": "Active Applications",
+        "targets": [
+          {
+            "expr": "metrics_master_apps_Value",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22},
+        "type": "graph",
+        "title": "Hive External Catalog - Operations",
+        "targets": [
+          {
+            "expr": "metrics_HiveExternalCatalog_fileCacheHits_Count",
+            "legendFormat": "File Cache Hits",
+            "refId": "A"
+          },
+          {
+            "expr": "metrics_HiveExternalCatalog_filesDiscovered_Count",
+            "legendFormat": "Files Discovered",
+            "refId": "B"
+          },
+          {
+            "expr": "metrics_HiveExternalCatalog_hiveClientCalls_Count",
+            "legendFormat": "Hive Client Calls",
+            "refId": "C"
+          },
+          {
+            "expr": "metrics_HiveExternalCatalog_partitionsFetched_Count",
+            "legendFormat": "Partitions Fetched",
+            "refId": "D"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Count"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true},
+        "lines": true
+      },
+      {
+        "id": 9,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 22},
+        "type": "graph",
+        "title": "Code Generator - Compilation Time Percentiles",
+        "targets": [
+          {
+            "expr": "metrics_CodeGenerator_compilationTime_50thPercentile",
+            "legendFormat": "50th Percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "metrics_CodeGenerator_compilationTime_75thPercentile",
+            "legendFormat": "75th Percentile",
+            "refId": "B"
+          },
+          {
+            "expr": "metrics_CodeGenerator_compilationTime_95thPercentile",
+            "legendFormat": "95th Percentile",
+            "refId": "C"
+          },
+          {
+            "expr": "metrics_CodeGenerator_compilationTime_99thPercentile",
+            "legendFormat": "99th Percentile",
+            "refId": "D"
+          }
+        ],
+        "yaxes": [
+          {"format": "ms", "label": "Time"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true},
+        "lines": true
+      },
+      {
+        "id": 10,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30},
+        "type": "graph",
+        "title": "Code Generator - Class Size Statistics",
+        "targets": [
+          {
+            "expr": "metrics_CodeGenerator_generatedClassSize_Mean",
+            "legendFormat": "Mean",
+            "refId": "A"
+          },
+          {
+            "expr": "metrics_CodeGenerator_generatedClassSize_Max",
+            "legendFormat": "Max",
+            "refId": "B"
+          },
+          {
+            "expr": "metrics_CodeGenerator_generatedClassSize_Min",
+            "legendFormat": "Min",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Size"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true},
+        "lines": true
+      },
+      {
+        "id": 11,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30},
+        "type": "graph",
+        "title": "Code Generator - Method Size Statistics",
+        "targets": [
+          {
+            "expr": "metrics_CodeGenerator_generatedMethodSize_Mean",
+            "legendFormat": "Mean",
+            "refId": "A"
+          },
+          {
+            "expr": "metrics_CodeGenerator_generatedMethodSize_Max",
+            "legendFormat": "Max",
+            "refId": "B"
+          },
+          {
+            "expr": "metrics_CodeGenerator_generatedMethodSize_Min",
+            "legendFormat": "Min",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Size"},
+          {"format": "short"}
+        ],
+        "legend": {"show": true},
+        "lines": true
+      }
+    ],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+  }
+}
