@@ -182,7 +182,7 @@ services:
     networks:
       - taxi-platform
   flink-jobmanager:
-    image: flink:1.19
+    image: ducngoquang/flink:1.19
     container_name: flink-jobmanager
     restart: always
     ports:
@@ -196,7 +196,7 @@ services:
       - taxi-platform
 
   flink-taskmanager:
-    image: flink:1.19
+    image: ducngoquang/flink:1.19
     container_name: flink-taskmanager
     restart: always
     depends_on:
@@ -307,58 +307,58 @@ services:
       superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger;
       "
 
-  airflow-db:
-    image: postgres:16-alpine
-    container_name: airflow-db
-    restart: always
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    volumes:
-      - ./airflow/db_data:/var/lib/postgresql/data
-    networks:
-      - taxi-platform
+  # airflow-db:
+  #   image: postgres:16-alpine
+  #   container_name: airflow-db
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: airflow
+  #     POSTGRES_PASSWORD: airflow
+  #     POSTGRES_DB: airflow
+  #   volumes:
+  #     - ./airflow/db_data:/var/lib/postgresql/data
+  #   networks:
+  #     - taxi-platform
 
-  airflow:
-    build:
-      context: ./src/airflow
-      dockerfile: Dockerfile.airflow
-    image: airflow-java:2.10.0
-    container_name: airflow
-    hostname: airflow
-    restart: always
-    depends_on:
-      - airflow-db
-    environment:
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
-      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      AIRFLOW__DATABASE__LOAD_DEFAULT_CONNECTIONS: "False"
-      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+  # airflow:
+  #   build:
+  #     context: ./src/airflow
+  #     dockerfile: Dockerfile.airflow
+  #   image: airflow-java:2.10.0
+  #   container_name: airflow
+  #   hostname: airflow
+  #   restart: always
+  #   depends_on:
+  #     - airflow-db
+  #   environment:
+  #     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+  #     AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+  #     AIRFLOW__DATABASE__LOAD_DEFAULT_CONNECTIONS: "False"
+  #     AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+  #     AIRFLOW__CORE__EXECUTOR: LocalExecutor
 
-      # --- Logging fix ---
-      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
-      AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
-      AIRFLOW__LOGGING__REMOTE_LOGGING: "False"
-    ports:
-      - "8085:8080"
-    volumes:
-      - ./src/airflow/dags:/opt/airflow/dags
-      - ./src:/opt/airflow/src
-      - ./src/airflow/airflow-requirements.txt:/airflow-requirements.txt
-      - ./airflow/logs:/opt/airflow/logs
-    command: >
-      bash -c "
-        pip install --no-cache-dir -r /airflow-requirements.txt &&
-        airflow db upgrade &&
-        airflow db init &&
-        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com ;
-        airflow webserver -p 8080 &
-        airflow scheduler
-      "
-    networks:
-      - taxi-platform
+  #     # --- Logging fix ---
+  #     AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+  #     AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
+  #     AIRFLOW__LOGGING__REMOTE_LOGGING: "False"
+  #   ports:
+  #     - "8085:8080"
+  #   volumes:
+  #     - ./src/airflow/dags:/opt/airflow/dags
+  #     - ./src:/opt/airflow/src
+  #     - ./src/airflow/airflow-requirements.txt:/airflow-requirements.txt
+  #     - ./airflow/logs:/opt/airflow/logs
+  #   command: >
+  #     bash -c "
+  #       pip install --no-cache-dir -r /airflow-requirements.txt &&
+  #       airflow db upgrade &&
+  #       airflow db init &&
+  #       airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com ;
+  #       airflow webserver -p 8080 &
+  #       airflow scheduler
+  #     "
+  #   networks:
+  #     - taxi-platform
   spark-master:
     image: bitnamilegacy/spark:3.5.1-debian-12-r9
     container_name: spark-master
