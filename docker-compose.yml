@@ -182,7 +182,7 @@ services:
     networks:
       - taxi-platform
   flink-jobmanager:
-    image: flink:1.19
+    image: ducngoquang/flink:1.19
     container_name: flink-jobmanager
     restart: always
     ports:
@@ -196,7 +196,7 @@ services:
       - taxi-platform
 
   flink-taskmanager:
-    image: flink:1.19
+    image: ducngoquang/flink:1.19
     container_name: flink-taskmanager
     restart: always
     depends_on:
