@@ -360,7 +360,7 @@ services:
     networks:
       - taxi-platform
   spark-master:
-    image: ducngoquang/spark:3.5.6-scala2.12-java17-python3-ge
+    image: ducngoquang/spark:3.5.6-iceberg
     container_name: spark-master
     entrypoint: ["/opt/spark/work-dir/entrypoint.sh", "master"]
     volumes:
