@@ -400,7 +400,7 @@ services:
     ports:
       - "9090:9090"
     networks:
-      - datahub_network
+      - taxi-platform
 
 
   grafana:
@@ -416,7 +416,7 @@ services:
     depends_on:
       - prometheus
     networks:
-      - datahub_network
+      - taxi-platform
 networks:
   taxi-platform:
     driver: bridge
