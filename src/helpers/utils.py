@@ -47,7 +47,7 @@ def get_spark():
         .config("spark.sql.catalog.lakehouse", "org.apache.iceberg.spark.SparkCatalog") \
         .config("spark.sql.catalog.lakehouse.type", "hadoop") \
         .config("spark.sql.catalog.lakehouse.warehouse", "s3a://lakehouse/warehouse") \
-        .config("spark.hadoop.fs.s3a.endpoint", "http://localhost:9000") \
+        .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000") \
         .config("spark.hadoop.fs.s3a.access.key", "admin") \
         .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
         .config("spark.hadoop.fs.s3a.secret.key", "12345678") \

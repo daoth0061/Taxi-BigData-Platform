@@ -33,6 +33,10 @@ with DAG(
         verbose=True,
         name='silver-job',
         packages='org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.0,org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.767',
+        conf={
+            'spark.pyspark.python': 'python3',
+            'spark.pyspark.driver.python': 'python3',
+        },
     )
 
     run_silver
