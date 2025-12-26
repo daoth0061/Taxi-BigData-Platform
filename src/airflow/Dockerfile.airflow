@@ -1,5 +1,5 @@
 # Dockerfile.airflow
-FROM apache/airflow:2.10.0
+FROM apache/airflow:2.10.0-python3.10
 
 USER root
 
@@ -12,3 +12,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 USER airflow
+
+# Copy requirements and install Python packages during build
+COPY airflow-requirements.txt /tmp/airflow-requirements.txt
+RUN pip install -r /tmp/airflow-requirements.txt

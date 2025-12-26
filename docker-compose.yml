@@ -350,14 +350,12 @@ services:
     volumes:
       - ./src/airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
-      - ./src/airflow/airflow-requirements.txt:/airflow-requirements.txt
       - ./airflow/logs:/opt/airflow/logs
     command: >
       bash -c "
-        pip install --no-cache-dir -r /airflow-requirements.txt &&
         airflow db upgrade &&
         airflow db init &&
-        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com ;
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true;
         airflow webserver -p 8080 &
         airflow scheduler
       "
@@ -381,7 +379,7 @@ services:
       - taxi-platform
 
   spark-worker:
-    image: ducngoquang/spark:3.5.6-scala2.12-java17-python3-ge
+    image: ducngoquang/spark:3.5.6-iceberg
     container_name: spark-worker
     entrypoint: ["/opt/spark/work-dir/entrypoint.sh", "worker"]
     volumes:
@@ -421,6 +419,7 @@ services:
       - prometheus
     networks:
       - taxi-platform
+
 networks:
   taxi-platform:
     driver: bridge
