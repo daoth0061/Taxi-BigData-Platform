@@ -181,59 +181,59 @@ services:
       "
     networks:
       - taxi-platform
-  # flink-jobmanager:
-  #   image: flink:1.19
-  #   container_name: flink-jobmanager
-  #   restart: always
-  #   ports:
-  #     - "8081:8081"   # Flink UI
-  #   command: jobmanager
-  #   environment:
-  #     - |
-  #       FLINK_PROPERTIES=
-  #       jobmanager.rpc.address: flink-jobmanager
-  #   networks:
-  #     - taxi-platform
+  flink-jobmanager:
+    image: flink:1.19
+    container_name: flink-jobmanager
+    restart: always
+    ports:
+      - "8081:8081"   # Flink UI
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+    networks:
+      - taxi-platform
 
-  # flink-taskmanager:
-  #   image: flink:1.19
-  #   container_name: flink-taskmanager
-  #   restart: always
-  #   depends_on:
-  #     - flink-jobmanager
-  #   command: taskmanager
-  #   environment:
-  #     - |
-  #       FLINK_PROPERTIES=
-  #       jobmanager.rpc.address: flink-jobmanager
-  #       taskmanager.numberOfTaskSlots: 2
-  #   networks:
-  #     - taxi-platform
-  # cassandra:
-  #   image: cassandra:4.1
-  #   container_name: cassandra
-  #   restart: always
-  #   ports:
-  #     - "9042:9042" # CQL port for clients (Flink, apps)
-  #   environment:
-  #     CASSANDRA_CLUSTER_NAME: "TaxiCluster"
-  #     CASSANDRA_NUM_TOKENS: 256
-  #     CASSANDRA_START_RPC: "true"
-  #     CASSANDRA_RPC_ADDRESS: 0.0.0.0
-  #     CASSANDRA_BROADCAST_RPC_ADDRESS: cassandra
-  #     CASSANDRA_BROADCAST_ADDRESS: cassandra
-  #     CASSANDRA_SEEDS: cassandra
-  #     MAX_HEAP_SIZE: "1G"
-  #     HEAP_NEWSIZE: "256M"
-  #   volumes:
-  #     - cassandra_data:/var/lib/cassandra
-  #   networks:
-  #     - taxi-platform
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES' || exit 1"]
-  #     interval: 10s
-  #     timeout: 10s
-  #     retries: 8
+  flink-taskmanager:
+    image: flink:1.19
+    container_name: flink-taskmanager
+    restart: always
+    depends_on:
+      - flink-jobmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+    networks:
+      - taxi-platform
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    restart: always
+    ports:
+      - "9042:9042" # CQL port for clients (Flink, apps)
+    environment:
+      CASSANDRA_CLUSTER_NAME: "TaxiCluster"
+      CASSANDRA_NUM_TOKENS: 256
+      CASSANDRA_START_RPC: "true"
+      CASSANDRA_RPC_ADDRESS: 0.0.0.0
+      CASSANDRA_BROADCAST_RPC_ADDRESS: cassandra
+      CASSANDRA_BROADCAST_ADDRESS: cassandra
+      CASSANDRA_SEEDS: cassandra
+      MAX_HEAP_SIZE: "1G"
+      HEAP_NEWSIZE: "256M"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    networks:
+      - taxi-platform
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 8
 
   metastore_db:
     image: postgres:16-alpine
@@ -278,30 +278,47 @@ services:
       - taxi-platform
 
   spark-thrift:
-    container_name: spark-thrift
-    build:
-      context: .
-      dockerfile: spark/Dockerfile.spark-thrift
-    image: taxi-spark-thrift:local
-    entrypoint:
-      - bash
-      - -lc
-      - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh thrift"
-    volumes:
-      - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
-      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
-      - ./data:/opt/spark/data
-      - ./src:/opt/spark/work-dir/src
-      - spark-logs:/opt/spark/spark-events
-      - ./spark/ivy-cache:/home/spark/.ivy2  # Bind mount - survives 'down -v'
-      - ./spark/extra-jars:/opt/spark/extra-jars  # Bind mount for downloaded JARs - survives 'down -v'
-    ports:
-      - 10000:10000
-    depends_on:
-      - hive-metastore
-      - minio
-    networks:
-      - taxi-platform
+      container_name: spark-thrift
+      image: spark:3.5.6-scala2.12-java17-python3-ubuntu
+      entrypoint: ['./entrypoint.sh', 'thrift' ]
+      volumes:
+        - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+        - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+        - ./data:/opt/spark/data
+        - spark-logs:/opt/spark/spark-events 
+      ports:
+        - 10000:10000
+      depends_on:
+        - hive-metastore
+        - minio
+      networks:
+        - taxi-platform
+#Windows
+  # spark-thrift:
+  #   container_name: spark-thrift
+  #   build:
+  #     context: .
+  #     dockerfile: spark/Dockerfile.spark-thrift
+  #   image: taxi-spark-thrift:local
+  #   entrypoint:
+  #     - bash
+  #     - -lc
+  #     - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh thrift"
+  #   volumes:
+  #     - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+  #     - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+  #     - ./data:/opt/spark/data
+  #     - ./src:/opt/spark/work-dir/src
+  #     - spark-logs:/opt/spark/spark-events
+  #     - ./spark/ivy-cache:/home/spark/.ivy2  # Bind mount - survives 'down -v'
+  #     - ./spark/extra-jars:/opt/spark/extra-jars  # Bind mount for downloaded JARs - survives 'down -v'
+  #   ports:
+  #     - 10000:10000
+  #   depends_on:
+  #     - hive-metastore
+  #     - minio
+  #   networks:
+  #     - taxi-platform
 
   # superset:
   #   image: ducngoquang/superset
@@ -342,67 +359,69 @@ services:
       - SPARK_HOST=spark-thrift
       - SPARK_PORT=10000
 
-  # airflow-db:
-  #   image: postgres:16-alpine
-  #   container_name: airflow-db
-  #   restart: always
-  #   environment:
-  #     POSTGRES_USER: airflow
-  #     POSTGRES_PASSWORD: airflow
-  #     POSTGRES_DB: airflow
-  #   volumes:
-  #     - ./airflow/db_data:/var/lib/postgresql/data
-  #   networks:
-  #     - taxi-platform
+  airflow-db:
+    image: postgres:16-alpine
+    container_name: airflow-db
+    restart: always
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - ./airflow/db_data:/var/lib/postgresql/data
+    networks:
+      - taxi-platform
 
-  # airflow:
-  #   build:
-  #     context: ./src/airflow
-  #     dockerfile: Dockerfile.airflow
-  #   image: airflow-java:2.10.0
-  #   container_name: airflow
-  #   hostname: airflow
-  #   restart: always
-  #   depends_on:
-  #     - airflow-db
-  #   environment:
-  #     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
-  #     AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-  #     AIRFLOW__DATABASE__LOAD_DEFAULT_CONNECTIONS: "False"
-  #     AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
-  #     AIRFLOW__CORE__EXECUTOR: LocalExecutor
+  airflow:
+    build:
+      context: ./src/airflow
+      dockerfile: Dockerfile.airflow
+    image: airflow-java:2.10.0
+    container_name: airflow
+    hostname: airflow
+    restart: always
+    depends_on:
+      - airflow-db
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__DATABASE__LOAD_DEFAULT_CONNECTIONS: "False"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
 
-  #     # --- Logging fix ---
-  #     AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
-  #     AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
-  #     AIRFLOW__LOGGING__REMOTE_LOGGING: "False"
-  #   ports:
-  #     - "8085:8080"
-  #   volumes:
-  #     - ./src/airflow/dags:/opt/airflow/dags
-  #     - ./src:/opt/airflow/src
-  #     - ./src/airflow/airflow-requirements.txt:/airflow-requirements.txt
-  #     - ./airflow/logs:/opt/airflow/logs
-  #   command: >
-  #     bash -c "
-  #       pip install --no-cache-dir -r /airflow-requirements.txt &&
-  #       airflow db upgrade &&
-  #       airflow db init &&
-  #       airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com ;
-  #       airflow webserver -p 8080 &
-  #       airflow scheduler
-  #     "
-  #   networks:
-  #     - taxi-platform
+      # --- Logging fix ---
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+      AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
+      AIRFLOW__LOGGING__REMOTE_LOGGING: "False"
+    ports:
+      - "8085:8080"
+    volumes:
+      - ./src/airflow/dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./src/airflow/airflow-requirements.txt:/airflow-requirements.txt
+      - ./airflow/logs:/opt/airflow/logs
+    command: >
+      bash -c "
+        pip install --no-cache-dir -r /airflow-requirements.txt &&
+        airflow db upgrade &&
+        airflow db init &&
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com ;
+        airflow webserver -p 8080 &
+        airflow scheduler
+      "
+    networks:
+      - taxi-platform
   spark-master:
-    image: bitnamilegacy/spark:3.5.1-debian-12-r9
+    image: ducngoquang/spark:3.5.6-iceberg
     container_name: spark-master
-    entrypoint:
-      - bash
-      - -lc
-      - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh master"
+    entrypoint: ["/opt/spark/work-dir/entrypoint.sh", "master"]
     volumes:
       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./spark/metrics.properties:/opt/spark/conf/metrics.properties
+      - ./spark/jobs:/opt/spark/work-dir/jobs
+      - ./data:/opt/spark/data
+      - spark-logs:/opt/spark/spark-events
     ports:
       - "7077:7077"
       - "8082:8080"
@@ -410,23 +429,55 @@ services:
       - taxi-platform
 
   spark-worker:
-    image: bitnamilegacy/spark:3.5.1-debian-12-r9
+    image: ducngoquang/spark:3.5.6-scala2.12-java17-python3-ge
     container_name: spark-worker
-    entrypoint:
-      - bash
-      - -lc
-      - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh worker"
+    entrypoint: ["/opt/spark/work-dir/entrypoint.sh", "worker"]
     volumes:
       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./spark/metrics.properties:/opt/spark/conf/metrics.properties
+      - ./data:/opt/spark/data
+      - spark-logs:/opt/spark/spark-events
     depends_on:
       - spark-master
     ports:
       - "8084:8081"
     networks:
       - taxi-platform
-networks:
-  taxi-platform:
-    driver: bridge
+#Windows
+#   spark-master:
+#     image: bitnamilegacy/spark:3.5.1-debian-12-r9
+#     container_name: spark-master
+#     entrypoint:
+#       - bash
+#       - -lc
+#       - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh master"
+#     volumes:
+#       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+#     ports:
+#       - "7077:7077"
+#       - "8082:8080"
+#     networks:
+#       - taxi-platform
+
+#   spark-worker:
+#     image: bitnamilegacy/spark:3.5.1-debian-12-r9
+#     container_name: spark-worker
+#     entrypoint:
+#       - bash
+#       - -lc
+#       - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh worker"
+#     volumes:
+#       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+#     depends_on:
+#       - spark-master
+#     ports:
+#       - "8084:8081"
+#     networks:
+#       - taxi-platform
+# networks:
+#   taxi-platform:
+#     driver: bridge
 
 volumes:
   db_data:
