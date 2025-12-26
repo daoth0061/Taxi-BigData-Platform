@@ -35,7 +35,7 @@ def get_spark():
     if existing_spark is not None:
         return existing_spark
 
-    s3a_endpoint = os.getenv("S3A_ENDPOINT", "http://localhost:9000")
+    s3a_endpoint = os.getenv("S3A_ENDPOINT", "http://minio:9000")
     s3a_access_key = os.getenv("S3A_ACCESS_KEY", "admin")
     s3a_secret_key = os.getenv("S3A_SECRET_KEY", "12345678")
     iceberg_warehouse = os.getenv("ICEBERG_WAREHOUSE", "s3a://lakehouse/warehouse")
