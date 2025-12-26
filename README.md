@@ -44,7 +44,7 @@ pip install -r requirements.txt
 
 ## 3. Generate Taxi Trip Data
 
-Writes to PostgreSQL, captured by Debezium to Kafka:
+Writes directly to Postgres (exposed on localhost:5432). Runs continuously until stopped.
 ```powershell
 python src/data_generation/insert_taxi_data.py
 ```
