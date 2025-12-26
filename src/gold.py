@@ -124,10 +124,15 @@ if not df.rdd.isEmpty():
 
     ### Dim zone df 
 
-    dim_zone_df = spark.read.csv(
-        dim_zone_path,
-        header=True,
-        inferSchema=True) 
+    dim_zone_df = (
+        spark.read
+        .option("header", True)
+        .option("inferSchema", True)
+        .option("nullValue", "None")
+        .option("ignoreLeadingWhiteSpace", True)
+        .option("ignoreTrailingWhiteSpace", True)
+        .csv(dim_zone_path)
+    )
 
     if not spark.catalog.tableExists("lakehouse.gold.dim_zone"):
         dim_zone_df.writeTo("lakehouse.gold.dim_zone").using("iceberg").create()
