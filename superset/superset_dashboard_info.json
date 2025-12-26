@@ -1,0 +1,33 @@
+{
+  "dashboard_url": "http://localhost:8088/superset/dashboard/nyc-taxi-analytics/",
+  "dashboard_id": 1,
+  "chart_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+  ],
+  "chart_count": 17,
+  "next_steps": "Open dashboard in edit mode and drag charts from the right panel",
+  "zone_reference": {
+    "1": "Manhattan",
+    "2": "Brooklyn",
+    "3": "Queens",
+    "4": "Bronx",
+    "5": "Staten Island",
+    "-1": "Unknown"
+  }
+}
