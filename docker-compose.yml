@@ -182,7 +182,7 @@ services:
     networks:
       - taxi-platform
   flink-jobmanager:
-    image: flink:1.19
+    image: ducngoquang/flink:1.19
     container_name: flink-jobmanager
     restart: always
     ports:
@@ -196,7 +196,7 @@ services:
       - taxi-platform
 
   flink-taskmanager:
-    image: flink:1.19
+    image: ducngoquang/flink:1.19
     container_name: flink-taskmanager
     restart: always
     depends_on:
@@ -478,6 +478,34 @@ services:
 # networks:
 #   taxi-platform:
 #     driver: bridge
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - taxi-platform
+
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - taxi-platform
+networks:
+  taxi-platform:
+    driver: bridge
 
 volumes:
   db_data:
