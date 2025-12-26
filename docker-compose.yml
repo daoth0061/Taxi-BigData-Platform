@@ -293,54 +293,6 @@ services:
         - minio
       networks:
         - taxi-platform
-#Windows
-  # spark-thrift:
-  #   container_name: spark-thrift
-  #   build:
-  #     context: .
-  #     dockerfile: spark/Dockerfile.spark-thrift
-  #   image: taxi-spark-thrift:local
-  #   entrypoint:
-  #     - bash
-  #     - -lc
-  #     - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh thrift"
-  #   volumes:
-  #     - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
-  #     - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
-  #     - ./data:/opt/spark/data
-  #     - ./src:/opt/spark/work-dir/src
-  #     - spark-logs:/opt/spark/spark-events
-  #     - ./spark/ivy-cache:/home/spark/.ivy2  # Bind mount - survives 'down -v'
-  #     - ./spark/extra-jars:/opt/spark/extra-jars  # Bind mount for downloaded JARs - survives 'down -v'
-  #   ports:
-  #     - 10000:10000
-  #   depends_on:
-  #     - hive-metastore
-  #     - minio
-  #   networks:
-  #     - taxi-platform
-
-  # superset:
-  #   image: ducngoquang/superset
-  #   # build: ./superset
-  #   container_name: superset
-  #   environment:
-  #     - SUPERSET_SECRET_KEY=secret
-  #   ports:
-  #     - 8088:8088
-  #   networks:
-  #     - taxi-platform
-  #   depends_on:
-  #     - spark-thrift
-  #   volumes:
-  #     - superset_data:/app/superset_home 
-  #   entrypoint: >
-  #     /bin/sh -c "
-  #     superset fab create-admin --username admin --firstname superset --lastname admin --email admin@superset.com --password admin;
-  #     superset db upgrade;
-  #     superset init;
-  #     superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger;
-  #     "
 
   # Streamlit Dashboard - NYC Taxi Analytics
   streamlit-dashboard:
@@ -444,40 +396,6 @@ services:
       - "8084:8081"
     networks:
       - taxi-platform
-#Windows
-#   spark-master:
-#     image: bitnamilegacy/spark:3.5.1-debian-12-r9
-#     container_name: spark-master
-#     entrypoint:
-#       - bash
-#       - -lc
-#       - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh master"
-#     volumes:
-#       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
-#     ports:
-#       - "7077:7077"
-#       - "8082:8080"
-#     networks:
-#       - taxi-platform
-
-#   spark-worker:
-#     image: bitnamilegacy/spark:3.5.1-debian-12-r9
-#     container_name: spark-worker
-#     entrypoint:
-#       - bash
-#       - -lc
-#       - "tr -d '\r' < /opt/spark/work-dir/entrypoint.sh > /tmp/entrypoint.sh; chmod +x /tmp/entrypoint.sh; exec /tmp/entrypoint.sh worker"
-#     volumes:
-#       - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
-#     depends_on:
-#       - spark-master
-#     ports:
-#       - "8084:8081"
-#     networks:
-#       - taxi-platform
-# networks:
-#   taxi-platform:
-#     driver: bridge
   prometheus:
     image: prom/prometheus
     container_name: prometheus

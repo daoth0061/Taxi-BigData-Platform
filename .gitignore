@@ -272,5 +272,6 @@ spark/ivy-cache
 spark/Dockerfile.spark-thrift
 spark/extra-jars
 RUN_PIPELINE.md
+local/
 
 src/register_tables_beeline.sql
