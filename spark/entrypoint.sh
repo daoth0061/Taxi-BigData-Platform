@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#Linux
 SPARK_WORKLOAD=$1
 
 echo "SPARK_WORKLOAD: $SPARK_WORKLOAD"
@@ -41,3 +42,46 @@ fi
 echo "Spark configuration complete."
 
 tail -f /dev/null
+
+#Windows
+# SPARK_WORKLOAD=$1
+
+# echo "SPARK_WORKLOAD: $SPARK_WORKLOAD"
+
+# echo "Downloading extra JARs (skipping if already exist)..."
+
+# # Download to bind-mounted folder so JARs survive container restarts
+# cd /opt/spark/extra-jars
+# wget -nc -q "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar" || true
+# wget -nc -q "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar" || true
+# wget -nc -q "https://jdbc.postgresql.org/download/postgresql-42.6.0.jar" || true
+# wget -nc -q "https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.6.0/iceberg-spark-runtime-3.5_2.12-1.6.0.jar" || true
+# echo "Extra JARs ready in /opt/spark/extra-jars/"
+
+# echo "Setting up Spark configuration..."
+
+# if [ "$SPARK_WORKLOAD" == "master" ]; then
+
+#   /bin/bash /opt/spark/sbin/start-master.sh -p 7077 
+
+# elif [[ $SPARK_WORKLOAD =~ "worker" ]]; then
+
+#   /bin/bash /opt/spark/sbin/start-worker.sh spark://spark-master:7077
+
+
+# elif [ "$SPARK_WORKLOAD" == "history" ]; then
+
+#   /bin/bash /opt/spark/sbin/start-history-server.sh
+
+# elif [ "$SPARK_WORKLOAD" == "thrift" ]; then
+
+#   sleep 10
+#   /bin/bash /opt/spark/sbin/start-thriftserver.sh \
+#     --jars /opt/spark/extra-jars/hadoop-aws-3.3.4.jar,/opt/spark/extra-jars/aws-java-sdk-bundle-1.12.262.jar,/opt/spark/extra-jars/postgresql-42.6.0.jar,/opt/spark/extra-jars/iceberg-spark-runtime-3.5_2.12-1.6.0.jar \
+#     --hiveconf hive.metastore.uris=thrift://hive-metastore:9083
+
+# fi
+
+# echo "Spark configuration complete."
+
+# tail -f /dev/null
