@@ -1,0 +1,8 @@
+streamlit==1.40.0
+plotly==5.24.0
+pandas==2.2.0
+pyhive==0.7.0
+thrift==0.20.0
+pure-sasl==0.6.2
+thrift_sasl==0.4.3
+
