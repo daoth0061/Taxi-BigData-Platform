@@ -110,9 +110,8 @@ http://localhost:8501
 - Operations & Efficiency (Tips, Duration distribution)
 - Geographic Intelligence (Zone heatmaps)
 
-<video src="assets/dashboard_visualization.webm" controls width="600">
-  Your browser does not support the video tag.
-</video>
+[dashboard_visualization.webm](https://github.com/user-attachments/assets/2510c950-6e86-4e71-9ed8-0edd18444a4b)
+
 
 ## 9. Set Up Flink and Cassandra
 
