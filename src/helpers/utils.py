@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType
 from datetime import datetime
+import os
 
 def update_watermark(spark, table_name, layer, new_watermark_ts):
 
@@ -33,6 +34,11 @@ def get_spark():
     existing_spark = SparkSession.getActiveSession()
     if existing_spark is not None:
         return existing_spark
+
+    s3a_endpoint = os.getenv("S3A_ENDPOINT", "http://minio:9000")
+    s3a_access_key = os.getenv("S3A_ACCESS_KEY", "admin")
+    s3a_secret_key = os.getenv("S3A_SECRET_KEY", "12345678")
+    iceberg_warehouse = os.getenv("ICEBERG_WAREHOUSE", "s3a://lakehouse/warehouse")
     
     spark = SparkSession.builder.appName("TaxiStreamToIceberg") \
         .config(
@@ -46,11 +52,11 @@ def get_spark():
         ) \
         .config("spark.sql.catalog.lakehouse", "org.apache.iceberg.spark.SparkCatalog") \
         .config("spark.sql.catalog.lakehouse.type", "hadoop") \
-        .config("spark.sql.catalog.lakehouse.warehouse", "s3a://lakehouse/warehouse") \
-        .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000") \
-        .config("spark.hadoop.fs.s3a.access.key", "admin") \
+        .config("spark.sql.catalog.lakehouse.warehouse", iceberg_warehouse) \
+        .config("spark.hadoop.fs.s3a.endpoint", s3a_endpoint) \
+        .config("spark.hadoop.fs.s3a.access.key", s3a_access_key) \
         .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
-        .config("spark.hadoop.fs.s3a.secret.key", "12345678") \
+        .config("spark.hadoop.fs.s3a.secret.key", s3a_secret_key) \
         .config("spark.hadoop.fs.s3a.path.style.access", "true") \
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
         .config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \

@@ -266,3 +266,12 @@ metastore_db/
 # ====================
 db_data/
 logs/
+
+# Windows Running Files
+spark/ivy-cache
+spark/Dockerfile.spark-thrift
+spark/extra-jars
+RUN_PIPELINE.md
+local/
+
+src/register_tables_beeline.sql

@@ -236,23 +236,32 @@ services:
       retries: 8
 
   metastore_db:
-    image: postgres
+    image: postgres:16-alpine
     container_name: metastore_db
+    restart: always
     environment:
       POSTGRES_USER: hive
       POSTGRES_PASSWORD: hive
       POSTGRES_DB: metastore
     networks:
-      - taxi-platform 
+      - taxi-platform
     volumes:
       - metastore_db_data:/var/lib/postgresql/data 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   hive-metastore:
     image: naushadh/hive-metastore
     container_name: hive-metastore
+    restart: always
     depends_on:
-      - metastore_db
-      - minio
+      metastore_db:
+        condition: service_healthy
+      minio:
+        condition: service_started
     environment:
       - DATABASE_HOST=metastore_db
       - DATABASE_DB=metastore
@@ -269,43 +278,38 @@ services:
       - taxi-platform
 
   spark-thrift:
-    container_name: spark-thrift
-    image: spark:3.5.6-scala2.12-java17-python3-ubuntu
-    entrypoint: ['./entrypoint.sh', 'thrift' ]
-    volumes:
-      - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
-      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
-      - ./data:/opt/spark/data
-      - spark-logs:/opt/spark/spark-events 
-    ports:
-      - 10000:10000
-    depends_on:
-      - hive-metastore
-      - minio
-    networks:
-      - taxi-platform 
+      container_name: spark-thrift
+      image: spark:3.5.6-scala2.12-java17-python3-ubuntu
+      entrypoint: ['./entrypoint.sh', 'thrift' ]
+      volumes:
+        - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
+        - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+        - ./data:/opt/spark/data
+        - spark-logs:/opt/spark/spark-events 
+      ports:
+        - 10000:10000
+      depends_on:
+        - hive-metastore
+        - minio
+      networks:
+        - taxi-platform
 
-  superset:
-    image: ducngoquang/superset
-    # build: ./superset
-    container_name: superset
-    environment:
-      - SUPERSET_SECRET_KEY=secret
+  # Streamlit Dashboard - NYC Taxi Analytics
+  streamlit-dashboard:
+    build:
+      context: ./streamlit
+      dockerfile: Dockerfile
+    container_name: streamlit-dashboard
+    restart: always
     ports:
-      - 8088:8088
+      - "8501:8501"
     networks:
-      - taxi-platform 
+      - taxi-platform
     depends_on:
       - spark-thrift
-    volumes:
-      - superset_data:/app/superset_home 
-    entrypoint: >
-      /bin/sh -c "
-      superset fab create-admin --username admin --firstname superset --lastname admin --email admin@superset.com --password admin;
-      superset db upgrade;
-      superset init;
-      superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger;
-      "
+    environment:
+      - SPARK_HOST=spark-thrift
+      - SPARK_PORT=10000
 
   airflow-db:
     image: postgres:16-alpine

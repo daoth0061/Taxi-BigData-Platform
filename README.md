@@ -7,13 +7,16 @@ From the repository root:
 docker compose up -d
 ```
 
-**What starts automatically:**
-- Postgres (with logical replication enabled)
-- Kafka and Debezium Connect
-- Kafka UI, Spark, MinIO, Flink, Cassandra, Superset
-- Debezium connector auto-registers using `configs/debezium-connector.json`
+**Services started:**
+- PostgreSQL (with logical replication)
+- Kafka + Debezium Connect
+- Spark Master/Worker + Thrift Server
+- MinIO (S3-compatible storage)
+- Hive Metastore
+- **Streamlit Dashboard** (port 8501)
+- Kafka UI (port 8080)
 
-**Verify (optional):**
+**Verify:**
 ```powershell
 # Check services are healthy
 docker compose ps
@@ -46,10 +49,6 @@ Writes directly to Postgres (exposed on localhost:5432). Runs continuously until
 python src/data_generation/insert_taxi_data.py
 ```
 
-- Stop with `Ctrl+C`
-- Data flows to Kafka via Debezium automatically
-- Inspect topics in Kafka UI at http://localhost:8080
-
 ---
 
 ## 4. Start Spark Streaming (Kafka → Iceberg)
@@ -66,17 +65,33 @@ python src/streaming/kafka_to_iceberg.py
 
 ---
 
-## 6. Connect Superset to Spark SQL
+## 6. Register Hive Tables
 
-Use this connection URL in Superset:
+Register the Gold layer tables for querying:
+```powershell
+docker exec spark-thrift /opt/spark/bin/beeline -u jdbc:hive2://localhost:10000 -n hive -f /opt/spark/work-dir/src/register_tables_beeline.sql
 ```
-hive://hive@spark-thrift:10000/default
-```
-## 7) Upload src/taxi_zone.csv to Minio at localhost:9001 
 
 ---
 
-## 7. Set Up Flink and Cassandra
+## 7. Access Streamlit Dashboard
+
+Open the analytics dashboard:
+```
+http://localhost:8501
+```
+
+**Dashboard Features:**
+- Executive Overview (KPIs)
+- Revenue Deep-Dive (Payment types, Hourly patterns)
+- Operations & Efficiency (Tips, Duration distribution)
+- Geographic Intelligence (Zone heatmaps)
+```
+## 8. Upload src/taxi_zone.csv to Minio at localhost:9001 
+
+---
+
+## 9. Set Up Flink and Cassandra
 
 ### Create Cassandra Tables
 ```bash
@@ -117,9 +132,9 @@ docker exec -it flink-jobmanager flink run \
 
 ---
 
-## 8. Tear Down
+## 10. Tear Down
 
-Stop and remove all containers and data volumes:
+Stop and remove all containers and volumes:
 ```powershell
 docker compose down -v
 ```

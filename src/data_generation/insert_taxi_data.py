@@ -1,14 +1,16 @@
+import os
+
 import psycopg2
 from datetime import datetime, timedelta
 import random
 
 # Database connection parameters
 DB_PARAMS = {
-    'dbname': 'nyc_taxi_db',
-    'user': 'admin',
-    'password': '123',
-    'host': 'localhost',
-    'port': '5432'
+    "dbname": os.getenv("DB_NAME", "nyc_taxi_db"),
+    "user": os.getenv("DB_USER", "admin"),
+    "password": os.getenv("DB_PASSWORD", "123"),
+    "host": os.getenv("DB_HOST", "localhost"),
+    "port": os.getenv("DB_PORT", "5432"),
 }
 
 # Create table SQL
@@ -92,28 +94,87 @@ def generate_trip_data_past(num_records=10000):
 
 
 
-def generate_trip_data(num_records=1000):
-    """Generate simulated taxi trip data"""
-
-    PAYMENT_TYPES = [0, 1, 2, 3, 4, 5, 6]
+def generate_trip_data(num_records=2000):
+    """Generate simulated taxi trip data with realistic NYC patterns"""
+    
+    # Payment types: 1=Credit, 2=Cash, 3=No charge, 4=Dispute, 5=Unknown
+    # Real NYC data: ~70% Credit, ~25% Cash, ~5% other
+    PAYMENT_WEIGHTS = [0.70, 0.25, 0.02, 0.01, 0.02]
+    PAYMENT_TYPES = [1, 2, 3, 4, 5]
+    
+    # Hour weights - morning rush 7-9, evening rush 17-19
+    HOUR_WEIGHTS = [
+        0.01, 0.01, 0.01, 0.01, 0.02, 0.03,  # 0-5 AM (very low)
+        0.05, 0.08, 0.09, 0.07, 0.06, 0.06,  # 6-11 AM (morning rush peaks at 8)
+        0.06, 0.06, 0.06, 0.06, 0.07, 0.09,  # 12-17 PM (afternoon, evening rush starts)
+        0.08, 0.06, 0.05, 0.04, 0.03, 0.02   # 18-23 PM (decline at night)
+    ]
+    
+    # Passenger count: most trips are 1-2 passengers
+    PASSENGER_WEIGHTS = [0.70, 0.15, 0.08, 0.04, 0.02, 0.01]
+    PASSENGER_COUNTS = [1, 2, 3, 4, 5, 6]
+    
     for _ in range(num_records):
-        pickup_time = datetime.now()
-        dropoff_time = pickup_time + timedelta(minutes=random.randint(10, 120))
+        # Generate pickup time with hour distribution
+        base_time = datetime.now()
+        # Random day in past 30 days
+        days_ago = random.randint(0, 30)
+        # Weighted hour selection
+        hour = random.choices(range(24), weights=HOUR_WEIGHTS)[0]
+        minute = random.randint(0, 59)
+        second = random.randint(0, 59)
+        
+        pickup_time = base_time.replace(
+            hour=hour, minute=minute, second=second
+        ) - timedelta(days=days_ago)
+        
+        # Trip distance with realistic distribution (most trips 1-5 miles)
+        if random.random() < 0.6:
+            trip_distance = random.gauss(3.0, 1.5)  # Short trips peak at 3 miles
+        elif random.random() < 0.9:
+            trip_distance = random.gauss(8.0, 3.0)  # Medium trips
+        else:
+            trip_distance = random.gauss(15.0, 5.0)  # Long trips (airport, etc)
+        trip_distance = max(0.5, min(30.0, trip_distance))
+        
+        # Trip duration correlated with distance (roughly 2min/mile + base + variability)
+        base_duration = 5  # Base 5 min for pickup
+        per_mile_time = random.gauss(4, 1)  # ~4 min per mile on average
+        trip_duration = base_duration + (trip_distance * per_mile_time) + random.gauss(0, 3)
+        trip_duration = max(5, min(120, trip_duration))
+        dropoff_time = pickup_time + timedelta(minutes=trip_duration)
+        
+        # Calculate fare (NYC: $2.50 base + $2.50/mile + time)
+        fare_amount = 2.50 + (trip_distance * 2.50) + (trip_duration * 0.50)
+        # Add surge pricing randomly (10% chance, 1.5-2x multiplier)
+        if random.random() < 0.10:
+            fare_amount *= random.uniform(1.5, 2.0)
+        
+        # Payment type with realistic weights
+        payment_type = random.choices(PAYMENT_TYPES, weights=PAYMENT_WEIGHTS)[0]
+        
+        # Tip amount depends on payment type
+        if payment_type == 1:  # Credit card - tips are common
+            tip_pct = random.gauss(0.18, 0.05)  # ~18% average tip
+            tip_pct = max(0, min(0.30, tip_pct))
+            tip_amount = fare_amount * tip_pct
+        elif payment_type == 2:  # Cash - less tipping tracked
+            tip_amount = 0 if random.random() < 0.7 else fare_amount * random.uniform(0.05, 0.15)
+        else:  # Other - no tip
+            tip_amount = 0
+        
+        total_amount = fare_amount + tip_amount
+        
+        # Passenger count with realistic weights
+        passenger_count = random.choices(PASSENGER_COUNTS, weights=PASSENGER_WEIGHTS)[0]
         
         pickup_long, pickup_lat = generate_random_location()
         dropoff_long, dropoff_lat = generate_random_location()
-        
-        trip_distance = random.uniform(0.5, 20.0)
-        fare_amount = 2.50 + (trip_distance * 2.50)
-        tip_amount = fare_amount * random.uniform(0, 0.3)
-        total_amount = fare_amount + tip_amount
-        
-        payment_type = random.choice(PAYMENT_TYPES)
 
         yield (
             pickup_time,
             dropoff_time,
-            random.randint(1, 6), # passenger_count
+            passenger_count,
             round(trip_distance, 2),
             pickup_long,
             pickup_lat,

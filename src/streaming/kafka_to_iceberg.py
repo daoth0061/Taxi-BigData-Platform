@@ -3,9 +3,15 @@ from pyspark.sql.functions import from_json, col, from_unixtime, to_timestamp, u
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType, TimestampType, LongType
 from pyspark.sql.streaming import StreamingQueryListener
 import json
+import os
 
 
 def get_spark():
+    s3a_endpoint = os.getenv("S3A_ENDPOINT", "http://localhost:9000")
+    s3a_access_key = os.getenv("S3A_ACCESS_KEY", "admin")
+    s3a_secret_key = os.getenv("S3A_SECRET_KEY", "12345678")
+    iceberg_warehouse = os.getenv("ICEBERG_WAREHOUSE", "s3a://lakehouse/warehouse")
+
     return (
         SparkSession.builder
         .appName("TaxiStreamToIceberg")
@@ -20,11 +26,11 @@ def get_spark():
         )
         .config("spark.sql.catalog.lakehouse", "org.apache.iceberg.spark.SparkCatalog")
         .config("spark.sql.catalog.lakehouse.type", "hadoop")
-        .config("spark.sql.catalog.lakehouse.warehouse", "s3a://lakehouse/warehouse")
-        .config("spark.hadoop.fs.s3a.endpoint", "http://localhost:9000")
-        .config("spark.hadoop.fs.s3a.access.key", "admin")
+        .config("spark.sql.catalog.lakehouse.warehouse", iceberg_warehouse)
+        .config("spark.hadoop.fs.s3a.endpoint", s3a_endpoint)
+        .config("spark.hadoop.fs.s3a.access.key", s3a_access_key)
         .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
-        .config("spark.hadoop.fs.s3a.secret.key", "12345678")
+        .config("spark.hadoop.fs.s3a.secret.key", s3a_secret_key)
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
         .config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
@@ -108,10 +114,13 @@ def build_schema():
 
 
 def build_stream(spark, schema):
+    kafka_bootstrap = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+    kafka_topic = os.getenv("KAFKA_TOPIC", "taxi.public.taxi_trips")
+
     df_kafka = (
         spark.readStream.format("kafka")
-        .option("kafka.bootstrap.servers", "localhost:9092")
-        .option("subscribe", "taxi.public.taxi_trips")
+        .option("kafka.bootstrap.servers", kafka_bootstrap)
+        .option("subscribe", kafka_topic)
         .option("startingOffsets", "earliest")
         .load()
     )

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#Linux
 SPARK_WORKLOAD=$1
 
 echo "SPARK_WORKLOAD: $SPARK_WORKLOAD"
