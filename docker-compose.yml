@@ -285,6 +285,7 @@ services:
         - ./spark/entrypoint.sh:/opt/spark/work-dir/entrypoint.sh
         - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
         - ./data:/opt/spark/data
+        - ./src:/opt/spark/work-dir/src
         - spark-logs:/opt/spark/spark-events 
       ports:
         - 10000:10000
@@ -328,7 +329,6 @@ services:
     build:
       context: ./src/airflow
       dockerfile: Dockerfile.airflow
-    image: airflow-java:2.10.0
     container_name: airflow
     hostname: airflow
     restart: always
@@ -371,6 +371,7 @@ services:
       - ./spark/metrics.properties:/opt/spark/conf/metrics.properties
       - ./spark/jobs:/opt/spark/work-dir/jobs
       - ./data:/opt/spark/data
+      - ./src:/opt/spark/work-dir/src
       - spark-logs:/opt/spark/spark-events
     ports:
       - "7077:7077"
