@@ -17,24 +17,25 @@ docker compose up -d
 - Kafka UI (port 8080)
 
 **Verify:**
-```powershell
+```bash
 # Check services are healthy
 docker compose ps
 
 # Verify connector is registered (should return: ["taxi-postgres-connector"])
 curl http://localhost:8083/connectors
 
-# Open Kafka UI
+# Open Kafka UI (only if you are on powershell)
 start http://localhost:8080
 ```
 
 ---
 
 ## 2. Install Python Dependencies
-```powershell
+```bash
 # Create and activate virtual environment (recommended)
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1 # If on powershell
+source .venv/bin/activate # If on Linux
 
 # Install dependencies
 pip install -r requirements.txt
@@ -45,14 +46,14 @@ pip install -r requirements.txt
 ## 3. Generate Taxi Trip Data
 
 Writes directly to Postgres (exposed on localhost:5432). Runs continuously until stopped.
-```powershell
+```bash
 python src/data_generation/insert_taxi_data.py
 ```
 
 ---
 
 ## 4. Start Spark Streaming (Kafka → Iceberg)
-```powershell
+```bash
 python src/streaming/kafka_to_iceberg.py
 ```
 
@@ -65,16 +66,38 @@ python src/streaming/kafka_to_iceberg.py
 
 ---
 
-## 6. Register Hive Tables
+## 6 Fix Airflow Write permission (if needed)
 
-Register the Gold layer tables for querying:
-```powershell
+From the terminals, give permission to `./airflow/logs`
+
+```bash
+chmod -R 777 ./airflow/logs
+```
+
+Then, go to `localhost:8085`, set the Connection settings as in the image below:
+
+![Airflow connection configuration](assets/airflow_network_configuration.png)
+
+Then, go to main page and start the `spark_lakehouse_pipeline`, and wait until `gold data` is generated.
+
+## 7. Register Hive Tables
+
+Next, create the `src/register_tables_beeline.sql` (contact us for detailed SQL Code)
+```bash
+touch src/register_tables_beeline.sql
+```
+
+Then, register the Gold layer tables for querying:
+```bash
 docker exec spark-thrift /opt/spark/bin/beeline -u jdbc:hive2://localhost:10000 -n hive -f /opt/spark/work-dir/src/register_tables_beeline.sql
 ```
 
----
+If that registeration fails, run this command before submitting the gold layer tables again:
+```bash
+docker exec spark-thrift mkdir -p /opt/spark/work-dir/src
+```
 
-## 7. Access Streamlit Dashboard
+## 8. Access Streamlit Dashboard
 
 Open the analytics dashboard:
 ```
@@ -86,10 +109,10 @@ http://localhost:8501
 - Revenue Deep-Dive (Payment types, Hourly patterns)
 - Operations & Efficiency (Tips, Duration distribution)
 - Geographic Intelligence (Zone heatmaps)
-```
-## 8. Upload src/taxi_zone.csv to Minio at localhost:9001 
 
----
+<video src="assets/dashboard_visualization.webm" controls width="600">
+  Your browser does not support the video tag.
+</video>
 
 ## 9. Set Up Flink and Cassandra
 
