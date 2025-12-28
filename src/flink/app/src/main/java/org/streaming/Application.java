@@ -12,6 +12,9 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.streaming.connectors.cassandra.CassandraSink;
+import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
 
 import org.model.*;
 import org.util.CDCParser;
@@ -19,6 +22,7 @@ import org.aggregator.RevenueAggregator;
 import org.windowing.RevenueWindowFunction;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import com.datastax.driver.mapping.Mapper;
 
@@ -27,6 +31,17 @@ public class Application {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(2);
+
+        // Enable checkpointing for fault tolerance
+        env.enableCheckpointing(30000); // Checkpoint every 30 seconds
+        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+        env.getCheckpointConfig().setMinPauseBetweenCheckpoints(5000);
+        env.getCheckpointConfig().setCheckpointTimeout(60000);
+        env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
+
+        // Configure state backend
+        env.setStateBackend(new HashMapStateBackend());
+        env.getCheckpointConfig().setCheckpointStorage("file:///tmp/flink-checkpoints");
 
         KafkaSource<String> source = KafkaSource.<String>builder()
                 .setBootstrapServers("kafka:29092")
