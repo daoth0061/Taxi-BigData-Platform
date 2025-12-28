@@ -59,7 +59,7 @@ def generate_random_location():
         random.uniform(40.63, 40.85)      # latitude
     )
 
-def generate_trip_data_past(num_records=10000):
+def generate_trip_data_past(num_records=1000):
     """Generate simulated taxi trip data"""
 
     PAYMENT_TYPES = [0, 1, 2, 3, 4, 5, 6]
