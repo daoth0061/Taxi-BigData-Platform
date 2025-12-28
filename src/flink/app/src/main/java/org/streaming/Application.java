@@ -12,7 +12,6 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.streaming.connectors.cassandra.CassandraSink;
-
 import org.model.*;
 import org.util.CDCParser;
 import org.aggregator.RevenueAggregator;
@@ -60,9 +59,8 @@ public class Application {
 
         // Cassandra sink for revenue
         CassandraSink.addSink(revenue)
-                .setHost("cassandra", 9042)
-                .build();
-
+            .setHost("cassandra", 9042)
+            .build();
 
         DataStream<ActiveTrips> active = trips
                 .map((MapFunction<TaxiTrip, Long>) t -> t.pickupTime)
@@ -83,10 +81,8 @@ public class Application {
 
         // Cassandra sink for active trips
         CassandraSink.addSink(active)
-                .setHost("cassandra", 9042)
-                .setMapperOptions(() -> new Mapper.Option[]{Mapper.Option.saveNullFields(true)})
-                .build();
-
+            .setHost("cassandra", 9042)
+            .build();
         env.execute("Taxi Analytics -> Cassandra");
     }
 }
