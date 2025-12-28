@@ -75,9 +75,8 @@ public class Application {
 
         // Cassandra sink for revenue
         CassandraSink.addSink(revenue)
-                .setHost("cassandra", 9042)
-                .build();
-
+            .setHost("cassandra", 9042)
+            .build();
 
         DataStream<ActiveTrips> active = trips
                 .map((MapFunction<TaxiTrip, Long>) t -> t.pickupTime)
@@ -98,10 +97,8 @@ public class Application {
 
         // Cassandra sink for active trips
         CassandraSink.addSink(active)
-                .setHost("cassandra", 9042)
-                .setMapperOptions(() -> new Mapper.Option[]{Mapper.Option.saveNullFields(true)})
-                .build();
-
+            .setHost("cassandra", 9042)
+            .build();
         env.execute("Taxi Analytics -> Cassandra");
     }
 }
